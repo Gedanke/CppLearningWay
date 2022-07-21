@@ -33,21 +33,14 @@ IDE：`Visual Studio Code/Visual Studio ...`
 
 课程目录如下
 
-* [C 语言基础](./CBasics/content.md)
-* [C 语言高级](./CAdvanced/content.md)
-* [C++ 核心编程](./CppCoreProgramming/content.md)
+* [C 与 C++](./CAndCpp/content.md)
 * [模板与 STL](./TemplatesAndSTL/content.md)
 * [数据结构与算法](./DataStructuresAndAlgorithms/content.md)
-* [linux 基础](./LinuxBasics/content.md)
-* [linux 高级](./LinuxAdvanced/content.md)
-* [linux 网络](./LinuxNetwork/content.md)
-* [关系型数据库](./SqlDatabase/content.md)
+* [Linux](./Linux/content.md)
+* [数据库](./Database/content.md)
 * [C++ Qt](./CppQt/content.md)
-* [Qt 项目实战](./QtProjectCombat/content.md)
 * [分布式编程](./DistributedProgramming/content.md)
-* [网络入侵与安全防护](./NetworkIntrusionAndSecurityProtection/content.md)
-* [网络入侵与渗透攻击](./NetworkIntrusionAndPenetrationAttacks/content.md)
-* [网络入侵与攻防实战](./NetworkIntrusionAndOffensiveAndDefenseActualCombat/content.md)
+* [网络](./Network/content.md)
 * [综合项目实战](./ComprehensiveProjectCombat/content.md)
 
 ---

@@ -1,6 +1,6 @@
 # README
 
-C++ 学习之路，涵盖 C 语言，数据结构与算法，C++，Qt，Linux，数据库，分布式，网络攻防与渗透等等的学习笔记与项目实战
+C++ 学习之路，涵盖 C 语言，数据结构与算法，C++，Qt，Linux，数据库，并发，分布式，网络攻防与渗透等等的学习笔记与项目实战
 
 ---
 
@@ -11,17 +11,6 @@ C++ 学习之路，涵盖 C 语言，数据结构与算法，C++，Qt，Linux，
 编译器：`gcc/g++ ...`
 
 IDE：`Visual Studio Code/Visual Studio ...`
-
-根据实际学习进度不定期更新中，主要内容可以分为以下几大块:
-
-* C 语言与 C++ 编程学习
-* 模板编程与 STL
-* 数据结构与算法
-* linux 操作系统学习
-* C++ Qt 编程与实战
-* C++ 分布式编程
-* 网络安全编程与实战
-* C++ 综合项目实战
 
 路漫漫其修远兮，吾将上下而求索!
 
@@ -34,13 +23,14 @@ IDE：`Visual Studio Code/Visual Studio ...`
 课程目录如下
 
 * [C 与 C++](./CAndCpp/content.md)
-* [模板与 STL](./TemplatesAndSTL/content.md)
 * [数据结构与算法](./DataStructuresAndAlgorithms/content.md)
-* [Linux](./Linux/content.md)
+* [STL 与内存管理](./MemoryAndSTL/content.md)
 * [数据库](./Database/content.md)
+* [Linux](./LinuxRelated/content.md)
 * [C++ Qt](./CppQt/content.md)
-* [分布式编程](./DistributedProgramming/content.md)
-* [网络](./Network/content.md)
+* [面试八股文](./Interview/content.md)
+* [并发与分布式编程](./ConcurrencyAndDistributedProgramming/content.md)
+* [网络编程与网络攻防](./NetworkRelated/content.md)
 * [综合项目实战](./ComprehensiveProjectCombat/content.md)
 
 ---

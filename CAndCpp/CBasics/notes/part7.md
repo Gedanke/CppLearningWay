@@ -430,8 +430,6 @@ int main()
 
 **减法运算**
 
-code:
-
 ```c
 #include <stdio.h>
 
@@ -495,8 +493,6 @@ int main()
 * 指针 - 指针：
     * 普通变量来说，语法允许，无实际意义
     * 数组来说：偏移过的元素个数
-
-code:
 
 ```c
 #include <stdio.h>
@@ -568,7 +564,7 @@ int main()
 
 * C 语言允许有多级指针存在，在实际的程序中一级指针最常用，其次是二级指针
 * 二级指针就是指向一个一级指针变量地址的指针，三级指针基本用不着
-* 多级指针，不能跳跃定义，`n` 级指针是 `n-1` 级指针的地址
+* 多级指针，不能跳跃定义，`n` 级指针是 `n - 1` 级指针的地址
 
 ![](../photos/part7/%E6%8C%87%E9%92%88%E6%95%B0%E7%BB%84.png)
 
@@ -631,7 +627,7 @@ ppp == &pp; // 三级指针
 * 指针做函数参数，调用时，传有效的地址值
 * 数组做函数参数，传递不再是整个数组，而是数组的首地址(一个指针)
 * 指针做函数返回值，不能返回局部变量的地址值
-* 数组做函数返回值，C语言，不允许这样做，只能写成指针形式
+* 数组做函数返回值，C 语言不允许这样做，只能写成指针形式
 
 ### 函数形参改变实参的值
 
@@ -685,6 +681,12 @@ int main()
 ### 数组名做函数参数
 
 数组名做函数参数，函数的形参会退化为指针：
+
+```c
+void BubbleSort(int arr[10]) == void BubbleSort(int arr[])  == void BubbleSort(int *arr);
+```
+
+传递不再是整个数组，而是数组的首地址
 
 ```c
 #include <stdio.h>
@@ -747,7 +749,7 @@ int main()
     * `str3[1] = 'H';` // 错误
 * `char *str4 = {'h', 'i', '\0'};` // 错误
 
-当字符串(字符数组)，做函数参数时，不需要提供 2 个参数。因为每个字符串都有 `\0`
+当字符串(字符数组)，做函数参数时，不需要提供 2 个参数，因为每个字符串都有 `\0`
 
 ### 字符指针
 
@@ -869,13 +871,21 @@ int main(void)
 
 ### 指针数组做为 main 函数的形参
 
+无参 `main` 函数：
+
 ```c
-int main(int argc, char *argv[]);
+int main(void) == int main();
+```
+
+带参数的 `main` 函数:
+
+```c
+ int main(int argc, char *argv[]) == int main(int argc, char **argv);
 ```
 
 * `main` 函数是操作系统调用的，第一个参数标明 `argc` 数组的成员数量，`argv` 数组的每个成员都是 `char *` 类型
-* `argv` 是命令行参数的字符串数组
-* `argc` 代表命令行参数的数量，程序名字本身算一个参数
+* `argc` 表示给 `main` 函数传递的参数的总个数，程序名字本身算一个参数
+* `argv` 是命令行参数的字符串数组，数组的每一个元素都是字符串 `char*` 
 
 ```c
 #include <stdio.h>
@@ -886,7 +896,7 @@ int main(int argc, char *argv[])
 {
 
     // 指针数组，它是数组，每个元素都是指针
-    char *a[] = {"aaaaaaa", "bbbbbbbbbb", "ccccccc"};
+    // char *a[] = {"aaaaaaa", "bbbbbbbbbb", "ccccccc"};
     int i = 0;
 
     printf("argc = %d\n", argc);
@@ -895,15 +905,31 @@ int main(int argc, char *argv[])
         printf("%s\n", argv[i]);
     }
 
-    // gcc -o main main.c && ./main
+    // ./main aaa bbb ccc
 
     /*
-        argc = 1
+        argc = 4
         ./main
+        aaa
+        bbb
+        ccc
     */
 
     return 0;
 }
+```
+
+命令行中使用 `gcc` 编译生成可执行文件，如：`main`
+
+```sh
+./main abc xyz zhangsan lisi 
+		-->
+argc --- 5
+./main -- argv[0]
+abc -- argv[1]
+xyz -- argv[2]
+zhangsan -- argv[3]
+lisi -- argv[4]
 ```
 
 ### 项目开发常用字符串应用模型
@@ -911,6 +937,8 @@ int main(int argc, char *argv[])
 #### strstr 中的 while 和 do-while 模型
 
 利用 `strstr` 标准库函数找出一个字符串中 `substr` 出现的个数
+
+![](../photos/part7/%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%B8%AD%E6%89%BE%E5%AD%90%E4%B8%B2.png)
 
 **while 模型**
 
@@ -1097,6 +1125,8 @@ int main(void)
 
 ### 字符串处理函数
 
+这些字符串处理函数往往有一个通性，函数调用结束的返回值和存放结果的 `dest` 参数是一致的
+
 #### strcpy()
 
 ```c
@@ -1112,7 +1142,7 @@ char *strcpy(char *dest, const char *src);
 	成功：返回 `dest` 字符串的首地址
 	失败：`NULL`
 
-注意：如果参数 `dest` 所指的内存空间不够大，可能会造成缓冲溢出的错误情况
+注意：如果参数 `dest` 所指的内存空间不够大，可能会造成缓冲溢出的错误情况，字体上不安全
 
 ```c
 #include <stdio.h>
@@ -1171,7 +1201,9 @@ int main(void)
 char *strncpy(char *dest, const char *src, size_t n);
 ```
 
-* 功能：把 `src` 指向字符串的前 `n` 个字符复制到 `dest` 所指向的空间中，是否拷贝结束符看指定的长度是否包含 `\0`
+* 功能：把 `src` 指向字符串的前 `n` 个字符复制到 `dest` 所指向的空间中，是否拷贝结束符看指定的长度是否包含 `\0`，默认不加 `\0`
+    * `n > strlen(src)`: 只拷贝 `src` 的大小，添加 `\0`
+    * `n < strlen(src)`: 只拷贝 `n` 字节大小，不添加 `\0`
 * 参数：
     * `dest`：目的字符串首地址
     * `src`：源字符首地址
@@ -1187,6 +1219,8 @@ char *strncpy(char *dest, const char *src, size_t n);
 int main(void)
 {
     char dest[20];
+    char dest2[20];
+
     char src[] = "hello world";
 
     // \0 也拷贝过来了
@@ -1196,9 +1230,18 @@ int main(void)
     dest[5] = '\0';
     printf("%s\n", dest);
 
+
+    strncpy(dest2, src, sizeof(src) - 2);
+    printf("%s\n", dest2);
+
+    dest2[sizeof(src) - 2] = '\0';
+    printf("%s\n", dest2);
+
     /*
         hello world
         hello
+        hello worl��V
+        hello worl
     */
 
     return 0;
@@ -1287,8 +1330,8 @@ int strcmp(const char *s1, const char *s2);
     * `s2`：字符串2 首地址
 * 返回值：
     * 相等：0
-    * 大于：>0 在不同操作系统 `strcmp` 结果会不同，返回 ASCII 差值
-    * 小于：<0
+    * 大于：> 0 在不同操作系统 `strcmp` 结果会不同，返回 ASCII 差值
+    * 小于：< 0
 
 ```c
 #include <stdio.h>
@@ -1392,6 +1435,9 @@ int sprintf(char *str, const char *format, ...);
 int main(void)
 {
     char dst[100] = {0};
+    // char *dest = "123456789123456789123456789"; // Segmentation fault
+    char dest[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '1', '2', '3', '4', '5', '6', '7', '8', '9', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
     int a = 10;
     char src[] = "hello world";
     printf("a = %d, src = %s", a, src);
@@ -1401,9 +1447,15 @@ int main(void)
     printf("dst = \" %s\"\n", dst);
     printf("len = %d\n", len);
 
+    int l = sprintf(dest, "a = %d, src = %s", a, src);
+    printf("dest = \" %s\"\n", dest);
+    printf("len = %d\n", l);
+
     /*
         a = 10, src = hello world
         dst = " a = 10, src = hello world"
+        len = 25
+        dest = " a = 10, src = hello world"
         len = 25
     */
 
@@ -1479,6 +1531,8 @@ int main(void)
 }
 ```
 
+`strrchr()` 是自右向左，在字符串 `str` 中找一个字符出现的位置，并返回字符在字符串中的地址
+
 #### strstr()
 
 ```c
@@ -1486,13 +1540,13 @@ int main(void)
 char *strstr(const char *haystack, const char *needle);
 ```
 
-* 功能：在字符串 `haystack` 中查找字符串 `needle` 出现的位置
+* 功能：在字符串 `haystack` 中查找字符串 `needle` 第一次出现的位置
 * 参数：
     * `haystack`：源字符串首地址
 	* `needle`：匹配字符串首地址
-返回值：
-	成功：返回第一次出现的 `needle` 地址
-	失败：`NULL`
+* 返回值：
+    * 成功：返回第一次出现的 `needle` 地址
+    * 失败：`NULL`
 
 ```c
 #include <stdio.h>
@@ -1527,8 +1581,9 @@ char *strtok(char *str, const char *delim);
     * 成功：分割后字符串首地址
 	* 失败：`NULL`
 
-注意
+**注意**
 
+* `strtok` 拆分字符串是直接在原串上操作，所以要求参1 必须可读可写
 * 在第一次调用时：`strtok()` 必需给予参数 `s` 字符串
 * 往后的调用则将参数 `s` 设置成 `NULL`，每次调用成功则返回指向被分割出片段的指针
 
@@ -1568,7 +1623,15 @@ int atoi(const char *nptr);
     * `nptr`：待转换的字符串
 * 返回值：成功转换后整数
 
-类似的函数有：
+错误使用：
+
+```c
+"abc123" --> 0;	
+"12abc345" ---> 12;  
+"123xyz" --> 123;
+```
+
+类似的函数有，当然必须要求原串是可转换的字符串：
 
 * `atof()`：把一个小数形式的字符串转化为一个浮点数
 * `atol()`：将一个字符串转化为 `long` 类型
@@ -1612,7 +1675,7 @@ int main(void)
 | `int a[10]` | 定义一个有 10 个元素的数组，每个元素类型为 `int` |
 | `int *p[10]` | 定义一个有 10 个元素的数组，每个元素类型为 `int*` |
 | `int func()` | 定义一个函数，返回值为 `int` 型 |
-| `int *func()` | 定义一个函数，返回值为 `int *` 型 |
+| `int *func()` | 定义一个函数，返回值为 `int*` 型 |
 | `int **p` | 定义一个指向 `int` 的指针的指针，二级指针 |
 
 ---

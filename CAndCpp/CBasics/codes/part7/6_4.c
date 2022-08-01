@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
 
     // 指针数组，它是数组，每个元素都是指针
-    char *a[] = {"aaaaaaa", "bbbbbbbbbb", "ccccccc"};
+    // char *a[] = {"aaaaaaa", "bbbbbbbbbb", "ccccccc"};
     int i = 0;
 
     printf("argc = %d\n", argc);
@@ -15,11 +15,14 @@ int main(int argc, char *argv[])
         printf("%s\n", argv[i]);
     }
 
-    // gcc -o main main.c && ./main
+    // ./main aaa bbb ccc
 
     /*
-        argc = 1
+        argc = 4
         ./main
+        aaa
+        bbb
+        ccc
     */
 
     return 0;

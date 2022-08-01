@@ -3,13 +3,13 @@
 void test()
 {
     // auto 写不写是一样的
-    // auto 只能出现在{}内部
+    // auto 只能出现在 {} 内部
     auto int b = 10;
 }
 
 int main(void)
 {
-    // b = 100; / /err，在 main 作用域中没有 b
+    // b = 100; // err，在 main 作用域中没有 b
 
     if (1)
     {

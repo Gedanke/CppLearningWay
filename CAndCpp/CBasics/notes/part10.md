@@ -58,11 +58,19 @@ typedef struct
 } FILE;
 ```
 
+![](../photos/part10/%E6%96%87%E4%BB%B6%E6%8C%87%E9%92%88.png)
+
 `FILE` 是系统使用 `typedef` 定义出来的有关文件信息的一种结构体类型，结构中含有文件名、文件状态和文件当前位置等信息
 
 声明 `FILE` 结构体类型的信息包含在头文件 `stdio.h` 中，一般设置一个指向 `FILE` 类型变量的指针变量，然后通过它来引用这些 `FILE` 类型变量。通过文件指针就可对它所指的文件进行各种操作
 
 ![](../photos/part10/2.png)
+
+读写文件与 `printf、scanf` 关联
+
+* `printf` -- 屏幕 -- 标准输出
+* `scanf` -- 键盘 -- 标准输入
+* `perror` -- 屏幕 -- 标准错误
 
 C 语言中有三个特殊的文件指针由系统默认打开，用户无需定义即可直接使用:
 
@@ -70,13 +78,15 @@ C 语言中有三个特殊的文件指针由系统默认打开，用户无需定
 * `stdout`：标准输出，默认为当前终端(屏幕)，我们使用的 `printf、puts` 函数默认输出信息到此终端
 * `stderr`：标准出错，默认为当前终端(屏幕)，我们使用的 `perror` 函数默认输出信息到此终端
 
+应用程序启动时，自动被打开，程序执行结束时，自动被关闭 ---- 隐式回收
+
 ### 文件的打开
 
 任何文件使用之前必须打开
 
 ```c
 #include <stdio.h>
-FILE * fopen(const char * filename, const char * mode);
+FILE *fopen(const char *filename, const char *mode);
 ```
 
 * 功能：打开文件
@@ -97,10 +107,10 @@ FILE *fp_passwd = NULL;
 FILE *fp_passwd = fopen("passwd.txt", "r");
 	
 // 打开当前目录(test)下 passwd.txt 文件
-fp_passwd = fopen(". / test / passwd.txt", "r");
+fp_passwd = fopen("./test/passwd.txt", "r");
 	
 // 打开当前目录上一级目录(相对当前目录) passwd.txt 文件
-fp_passwd = fopen(".. / passwd.txt", "r");
+fp_passwd = fopen("../passwd.txt", "r");
 		
 // 绝对路径：
 // 打开 C 盘 test 目录下一个叫 passwd.txt 文件
@@ -162,7 +172,7 @@ int main(void)
 
 ```c
 #include <stdio.h>
-int fclose(FILE * stream);
+int fclose(FILE *stream);
 ```
 
 * 功能：关闭先前 `fopen()` 打开的文件。此动作让缓冲区的数据写入文件中，并释放系统所提供的文件资源
@@ -188,7 +198,7 @@ fclose(fp);
 
 ```c
 #include <stdio.h>
-int fputc(int ch, FILE * stream);
+int fputc(int ch, FILE *stream);
 ```
 
 * 功能：将 `ch` 转换为 `unsigned char` 后写入 `stream` 指定的文件中
@@ -227,7 +237,7 @@ int main(void)
 
 **文件结尾**
 
-在 C 语言中，`EOF` 表示文件结束符(`end of file`)。在 `while` 循环中以 `EOF` 作为文件结束标志，这种以 `EOF` 作为文件结束标志的文件，必须是文本文件。在文本文件中，数据都是以字符的 ASCII 代码值的形式存放。ASCII 代码值的范围是 0~127，不可能出现 -1，因此可以用EOF作为文件结束标志
+在 C 语言中，`EOF` 表示文件结束符(`end of file`)。在 `while` 循环中以 `EOF` 作为文件结束标志，这种以 `EOF` 作为文件结束标志的文件，必须是文本文件。在文本文件中，数据都是以字符的 ASCII 代码值的形式存放。ASCII 代码值的范围是 0~127，不可能出现 -1，因此可以用 `EOF` 作为文件结束标志
 
 ```c
 #define EOF (-1)
@@ -237,7 +247,7 @@ int main(void)
 
 ```c
 #include <stdio.h>
-int feof(FILE * stream);
+int feof(FILE *stream);
 ```
 
 * 功能：检测是否读取到了文件结尾。判断的是最后一次“读操作的内容”，不是当前位置内容(上一个内容)
@@ -251,7 +261,7 @@ int feof(FILE * stream);
 
 ```c
 #include <stdio.h>
-int fgetc(FILE * stream);
+int fgetc(FILE *stream);
 ```
 
 * 功能：从 `stream` 指定的文件中读取一个字符
@@ -283,7 +293,7 @@ int main(void)
 
     fclose(fp);
 
-    int sign = 1;
+    int sign = 0;
     char ch;
     FILE *f = NULL;
     f = fopen("./test", "rb");
@@ -298,10 +308,18 @@ int main(void)
     }
     else
     {
-        while (!feof(fp)) // 文件没有结束，则执行循环
+        while (1)
         {
-            ch = fgetc(fp);
-            printf("%c", ch);
+            ch = fgetc(f);
+
+            if (!feof(f))
+            {
+                printf("%c", ch);
+            }
+            else
+            {
+                break;
+            }
         }
         printf("\n");
     }
@@ -322,7 +340,7 @@ int main(void)
 
 ```c
 #include <stdio.h>
-int fputs(const char * str, FILE * stream);
+int fputs(const char *str, FILE *stream);
 ```
 
 * 功能：将 `str` 所指定的字符串写入到 `stream` 指定的文件中，字符串结束符 `\0` 不写入文件
@@ -365,7 +383,7 @@ int main(void)
 
 ```c
 #include <stdio.h>
-char * fgets(char * str, int size, FILE * stream);
+char * fgets(char *str, int size, FILE *stream);
 ```
 
 * 功能：从 `stream` 指定的文件内读入字符，保存到 `str` 所指定的内存空间，直到出现换行字符、读到文件结尾或是已读了 `size - 1` 个字符为止，最后会自动加上字符 `\0` 作为字符串结束
@@ -413,7 +431,275 @@ int main(void)
 有个文件大小不确定，每行内容都是一个四则运算表达式，还没有算出结果，写一个程序，自动算出其结果后修改文件
 
 ```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
+char *fileName = NULL;
+
+// 获取表达式的值
+int getResult(char *expression);
+
+int main(int argc, char *argv[])
+{
+    if (argc <= 1)
+    {
+        printf("参数数量不足，请在 ./xxx 后加入文件路径\n");
+        return 0;
+    }
+    fileName = argv[1];
+
+    // 第一次读取文件，获取表达式数目
+    int num = 0;
+    FILE *f1 = fopen(fileName, "r");
+    char buff[100] = {0};
+
+    while (!feof(f1))
+    {
+        memset(buff, 0, sizeof(buff));
+        char *p = fgets(buff, sizeof(buff), f1);
+        if (p != NULL)
+        {
+            num++;
+        }
+    }
+    fclose(f1);
+    // printf("%d\n", num);
+
+    char **array = (char **)malloc(sizeof(char *) * num);
+
+    // 第一次读取文件，获取表达式并将计算结果写入到 array 中
+    int idx = 0;
+    FILE *f2 = fopen(fileName, "r");
+
+    while (!feof(f2))
+    {
+        memset(buff, 0, sizeof(buff));
+        char *p = fgets(buff, sizeof(buff), f2);
+        if (p != NULL)
+        {
+            // printf("%s", p);
+            // printf("%d\n", getResult(p));
+            // 得到结果，将结果添加到 buff 里面
+            char res[50] = {0};
+            // 结果字符串
+            sprintf(res, "%d", getResult(p));
+            char tmp[100] = {0};
+            strncpy(tmp, p, strlen(p) - 1);
+            strcat(tmp, res);
+            strcat(tmp, "\n");
+
+            array[idx] = (char *)malloc(sizeof(char) * 50);
+            strcpy(array[idx], tmp);
+            printf("%s", array[idx]);
+            idx++;
+        }
+    }
+
+    fclose(f2);
+
+    // 第三次打开文件，写入动态数组中的内容
+    FILE *f3 = fopen(fileName, "w");
+
+    for (int i = 0; i < num; i++)
+    {
+        fputs(array[i], f3);
+        free(array[i]);
+    }
+
+    free(array);
+    fclose(f3);
+
+    /*
+     */
+
+    return 0;
+}
+
+// 获取表达式的值
+int getResult(char *expression)
+{
+    int res = 0;
+    // 确定长度
+    int len = strlen(expression);
+    // 找四则运算，并确定其位置
+    int idx = 0;
+    int sign = -1;
+
+    char num1[50] = {0};
+    char num2[50] = {0};
+
+    for (int i = 0; i < len - 1; i++)
+    {
+        if (expression[i] == '+')
+        {
+            idx = i;
+            sign = 1;
+        }
+        else if (expression[i] == '-')
+        {
+            idx = i;
+            sign = 2;
+        }
+        else if (expression[i] == '*')
+        {
+            idx = i;
+            sign = 3;
+        }
+        else if (expression[i] == '/')
+        {
+            idx = i;
+            sign = 4;
+        }
+        else
+        {
+            // 暂时未找到运算符
+            if (sign == -1)
+            {
+                num1[i] = expression[i];
+            }
+            else
+            {
+                num2[i - idx - 1] = expression[i];
+            }
+        }
+    }
+
+    int n1 = atoi(num1);
+    int n2 = atoi(num2);
+    switch (sign)
+    {
+    case 1:
+    {
+        res = n1 + n2;
+        break;
+    }
+    case 2:
+    {
+        res = n1 - n2;
+        break;
+    }
+    case 3:
+    {
+        res = n1 * n2;
+        break;
+    }
+    case 4:
+    {
+        res = n1 / n2;
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    };
+
+    return res;
+}
+```
+
+结果：
+
+```sh
+# cat a.txt
+10+51=
+10-5=
+10*5=
+10/5=
+# ./calc a.txt
+10+51=61
+10-5=5
+10*5=50
+10/5=2
+# cat a.txt
+10+51=61
+10-5=5
+10*5=50
+10/5=2
+# 
+```
+
+改进，对表达式的提取与计算写入可以使用 `sscanf` 与 `sprintf`，这样代码可以简化
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+char *fileName = NULL;
+char result[100];
+
+// 获取表达式的值
+void getResult(char *expression);
+
+int main(int argc, char *argv[])
+{
+    if (argc <= 1)
+    {
+        printf("参数数量不足，请在 ./xxx 后加入文件路径\n");
+        return 0;
+    }
+    fileName = argv[1];
+
+    // 读取文件，获取表达式并将计算结果写入到 array 中
+    FILE *f1 = fopen(fileName, "r");
+    char array[1024] = {0};
+    char buff[100];
+
+    while (!feof(f1))
+    {
+        memset(buff, 0, sizeof(buff));
+        char *p = fgets(buff, sizeof(buff), f1);
+        if (p != NULL)
+        {
+            getResult(p);
+            strcat(array, result);
+            printf("%s", result);
+        }
+    }
+    fclose(f1);
+
+    // 打开文件，写入动态数组中的内容
+    FILE *f2 = fopen(fileName, "w");
+    fputs(array, f2);
+    fclose(f2);
+
+    /*
+     */
+
+    return 0;
+}
+
+// 获取表达式的值
+void getResult(char *expression)
+{
+    memset(result, 0, sizeof(result));
+    int num1, num2;
+    char ch;
+    int res = 0;
+
+    sscanf(expression, "%d%c%d=\n", &num1, &ch, &num2);
+
+    if (ch == '+')
+    {
+        res = num1 + num2;
+    }
+    else if (ch == '-')
+    {
+        res = num1 - num2;
+    }
+    else if (ch == '*')
+    {
+        res = num1 * num2;
+    }
+    else
+    {
+        res = num1 / num2;
+    }
+
+    sprintf(result, "%d%c%d=%d\n", num1, ch, num2, res);
+}
 ```
 
 ### 按照格式化文件 fprintf、fscanf
@@ -422,7 +708,7 @@ int main(void)
 
 ```c
 #include <stdio.h>
-int fprintf(FILE * stream, const char * format, ...);
+int fprintf(FILE *stream, const char *format, ...);
 ```
 
 * 功能：根据参数 `format` 字符串来转换并格式化数据，然后将结果输出到 `stream` 指定的文件中，指定出现字符串结束符 `\0` 为止
@@ -441,7 +727,7 @@ fprintf(fp, "%d %d %d\n", 1, 2, 3);
 
 ```c
 #include <stdio.h>
-int fscanf(FILE * stream, const char * format, ...);
+int fscanf(FILE *stream, const char *format, ...);
 ```
 
 * 功能：从 `stream` 指定的文件读取字符串，并根据参数 `format` 字符串来转换并格式化数据
@@ -460,8 +746,96 @@ fscanf(fp, "%d %d %d\n", &a, &b, &c);
 printf("a = %d, b = %d, c = %d\n", a, b, c);
 ```
 
+* 边界溢出，存储读取的数据空间在使用之前清空
+* `fscanf` 函数，每次在调用时都会判断下一次调用是否匹配参数2，如果不匹配提前结束读文件(`feof(fp)` 为真)
+
 **强化训练：文件版排序**
 
+```c
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+
+void write_rand()
+{
+    FILE *fp = fopen("test.txt", "w");
+    if (!fp) // fp == NULL
+    {
+        perror("fopen error");
+        return;
+    }
+    srand(time(NULL)); // 随机数种子
+    for (size_t i = 0; i < 10; i++)
+    {
+        fprintf(fp, "%d\n", rand() % 100); // 将生成的随机数写入文件
+    }
+
+    fclose(fp);
+}
+
+void BubbleSort(int *src, int len)
+{
+    for (int i = 0; i < len - 1; i++)
+    {
+        for (int j = 0; j < len - 1 - i; j++)
+        {
+            if (src[j] > src[j + 1])
+            {
+                int temp = src[j];
+                src[j] = src[j + 1];
+                src[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void read_rand02()
+{
+    int arr[10], i = 0;
+
+    FILE *fp = fopen("test.txt", "r");
+    if (!fp) // fp == NULL
+    {
+        perror("fopen error");
+        return;
+    }
+
+    while (1)
+    {
+        fscanf(fp, "%d\n", &arr[i]); // 从文件中读取一个随机数，存入数组 arr
+        i++;
+        if (feof(fp)) // 先存储，后判断，防止最后一个元素丢失
+            break;
+    }
+    BubbleSort(arr, sizeof(arr) / sizeof(arr[0])); // 对读取到的乱序数组排序
+
+    fclose(fp);                  // 关闭文件
+    fp = fopen("test.txt", "w"); // 重新 w 方式打开文件，清空原未排序文件
+    if (!fp)                     // fp == NULL
+    {
+        perror("fopen error");
+        return;
+    }
+    for (size_t i = 0; i < 10; i++)
+        fprintf(fp, "%d\n", arr[i]); // 写排好序的数组到文件
+
+    fclose(fp);
+}
+
+int main(void)
+{
+    write_rand();
+    getchar();
+    read_rand02();
+
+    // 12
+
+    return EXIT_SUCCESS;
+}
+```
 
 ### 按照块读写文件 fread、fwrite
 
@@ -571,8 +945,60 @@ int main(void)
 
 **强化训练：大文件拷贝**
 
-```c
+已知一个任意类型的文件，对该文件复制，产生一个相同的新文件
 
+* 打开两个文件， 一个 `r`， 另一 `w` 
+* 从 `r` 中 `fread`，`fwrite` 到 `w` 文件中
+* 判断到达文件结尾，终止  
+* 关闭
+
+注意：在 `windows` 下，打开二进制文件(mp3、mp4、avi、jpg...)时需要使用 `b`。如：`rb`、`wb`
+
+```c
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+
+void myfile_cp()
+{
+    FILE *rfp = fopen("test.txt", "rb");
+    FILE *wfp = fopen("test2.txt", "wb");
+
+    char buf[4096] = {0}; // 缓冲区。
+
+    int ret = 0;
+
+    while (1)
+    {
+        memset(buf, 0, sizeof(buf));
+        ret = fread(buf, 1, sizeof(buf), rfp);
+        if (ret == 0)
+        {
+            break;
+        }
+        printf("ret = %d\n", ret);
+        fwrite(buf, 1, ret, wfp);
+    }
+
+    fclose(wfp);
+    fclose(rfp);
+}
+
+int main()
+{
+    myfile_cp();
+    printf("---------------------finish\n");
+
+    /*
+        ret = 26
+        ---------------------finish
+    */
+
+    return EXIT_SUCCESS;
+}
 ```
 
 ---
@@ -605,8 +1031,10 @@ long ftell(FILE *stream);
 * 参数：
     * `stream`：已经打开的文件指针
 * 返回值：
-    * 成功：当前文件流(文件光标)的读写位置
+    * 成功：从文件当前读写位置到起始位置的偏移量
     * 失败：-1
+
+借助 `ftell(fp) + fseek(fp, 0, SEEK_END);` 来获取文件大小
 
 ```c
 #include <stdio.h>
@@ -736,7 +1164,7 @@ int main(int argc, char **args)
 int stat(const char *path, struct stat *buf);
 ```
 
-* 功能：获取文件状态信息
+* 功能：获取文件状态信息，对于系统而言，系统资源消耗较大
 * 参数：
     * `path`：文件名
     * `buf`：保存文件信息的结构体
@@ -816,6 +1244,8 @@ int rename(const char *oldpath, const char *newpath);
 
 ## 文件缓冲区
 
+![](../photos/part10/%E6%96%87%E4%BB%B6%E7%BC%93%E5%86%B2.png)
+
 ### 文件缓冲区
 
 ANSIC 标准采用“缓冲文件系统”处理数据文件
@@ -833,6 +1263,16 @@ ANSIC 标准采用“缓冲文件系统”处理数据文件
 * 程序与磁盘之间交互，不是立即完成，系统或程序可根据需要设置缓冲区，以提高存取效率
 
 ### 更新缓冲区
+
+缓冲区刷新：
+
+* 标准输出 -- `stdout` -- 标准输出缓冲区。写给屏幕的数据，都是先存缓冲区中，由缓冲区一次性刷新到物理设备(屏幕)
+* 标准输入 -- `stdin` -- 标准输入缓冲区。从键盘读取的数据，直接读到缓冲区中，由缓冲区给程序提供数据
+* 预读入、缓输出
+* 行缓冲：`printf();` 遇到 `\n` 就会将缓冲区中的数据刷新到物理设备上
+* 全缓冲：文件。缓冲区存满，数据刷新到物理设备上
+* 无缓冲：`perror`。缓冲区中只要有数据，就立即刷新到物理设备
+* 文件关闭时，缓冲区会被自动刷新。隐式回收：关闭文件、刷新缓冲区、释放 `malloc`
 
 ```c
 #include <stdio.h>

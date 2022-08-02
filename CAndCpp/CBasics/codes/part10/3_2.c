@@ -19,7 +19,7 @@ int main(void)
 
     fclose(fp);
 
-    int sign = 1;
+    int sign = 0;
     char ch;
     FILE *f = NULL;
     f = fopen("./test", "rb");
@@ -34,10 +34,18 @@ int main(void)
     }
     else
     {
-        while (!feof(fp)) // 文件没有结束，则执行循环
+        while (1)
         {
-            ch = fgetc(fp);
-            printf("%c", ch);
+            ch = fgetc(f);
+
+            if (!feof(f))
+            {
+                printf("%c", ch);
+            }
+            else
+            {
+                break;
+            }
         }
         printf("\n");
     }

@@ -19,35 +19,64 @@
 
 ---
 
+## 模块
+
+![](../photos/part11/1.png)
+
+* 蛇的初始化
+	* 蛇的初始化实际就是二维数组的初始化，该二维数组存储两个值，里面包含该蛇身体的坐标信息，它出现的初始位置是横纵坐标的中间位置
+* 蛇的移动
+	* 蛇的移动是通改变二维数组坐标位置来实现的，例如当蛇向右前进一个单位，则将尾每一个身体位置的坐标更改，同时改变蛇头、蛇身以及蛇尾的方向。这样整体来看来蛇就前进了一个单位
+* 蛇的增长
+	* 当蛇吃了正常食物后，蛇的长度会增加，增加蛇的长度就是在食物的位置增加一个二维数组并且将这个位置变为蛇头
+* 蛇的死亡
+	* 当蛇撞上障碍物、自身或者通关时，蛇会死亡，蛇死亡就是二维数组的销毁。
+* 食物的产生
+	* 食物出现的位置产生都是随机的，这些因素由通过随机函数获取的随机数决定。食物的位置不能出现在障碍物和边界上
+* 控制键盘输入
+	* 通过获取键盘输入的W/w(上)、S/s(下)、A/a(左)、D/d(右)来改变蛇模块中移动方向，从而影响蛇的移动方向
+
+---
+
 ## 具体流程
 
 定义蛇对象:
 
 ```c
-struct BODY {
-	int x;
-	int Y;
+#define HIGH 20
+#define WIDE 60
+
+// 身体对象
+struct Body
+{
+    int x;
+    int y;
 };
 
-struct SNAKE {
-	struct BODY body[20*60];	// 蛇身 。 body[0] -- 蛇头
-    int size;			// 蛇的大小
-}snake;
+// 蛇对象
+struct Snake
+{
+    struct Body body[HIGH * WIDE];
+    int size;
+} snake;
 ```
 	
 食物对象：
 
 ```c
-struct FOOD {
-	int X;
-	int Y;
-}food;
+// 食物对象
+struct Food
+{
+    int x;
+    int y;
+} food;
 ```
 
 分数： 
 
 ```c
-int score;
+// 得分
+int score = 0;
 ```
 
 初始化蛇：
@@ -55,27 +84,31 @@ int score;
 * 封装一个函数 完成蛇的初始：
 
 ```c
-void initSnake(void)
+// 初始化蛇
+void initSnake()
 {
-	snake.size = 2;
+    snake.size = 2;
 
-	snake.body[0].X = WIDE/2;		// 初始化好了蛇头
-	snake.body[0].Y = HiGH/2;
+    // 蛇头
+    snake.body[0].x = WIDE / 2;
+    snake.body[0].y = HIGH / 2;
 
-	snake.body[1].X = WIDE/2 - 1;		// 初始化一节蛇身
-	snake.body[1].Y = HIGH/2;
+    // 一节蛇身
+    snake.body[1].x = WIDE / 2 - 1;
+    snake.body[1].y = HIGH / 2;
+
+    return;
 }
 ```
 
 初始化食物：
 
 ```c
-void initFood(void)
-{	
-	food.X = rand() % WIDE;  // 0-59
-	food.Y = rand() % HIGH;  // 0-59
-
-	return;
+// 初始化食物
+void initFood()
+{
+    food.x = rand() % WIDE;
+    food.y = rand() % HIGH;
 }
 ```
 
@@ -85,44 +118,48 @@ void initFood(void)
 #include <conio.h> 
 #include <Windows.h>
 
-COORD coord;		// COORD  --> 结构体， 有两个成员变量：x，y 坐标
-
-coord.X = snake.body[0].X;
-coord.Y = snake.body[0].Y;
-
-setConsoleCursorPositon(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+// 去除光标
+CONSOLE_CURSOR_INFO cci;
+cci.dwSize = sizeof(cci);
+cci.bVisible = FALSE;
+SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
 ```
 
-会将光标位置，定位到 初始化好的蛇头位置(`WIDE/2, HIGH/2`)。屏幕中间 
+会将光标位置，定位到初始化好的蛇头位置(`WIDE/2, HIGH/2`)。屏幕中间 
 
 画出蛇和食物：封装函数，`initUI()`
 
 ```c
-initUI(){
-   	COORD coord = {0};					// 光标移动的位置。
+// 画蛇和食物
+void initUI()
+{
+    // 光标移动位置
+    COORD coord = {0};
 
-	// 画蛇
-	for (size_t i = 0; i < snake.size; i++)
-	{
-		coord.X = snake.body[i].X;
-		coord.Y = snake.body[i].Y;
+    // 画蛇
+    for (size_t i = 0; i < snake.size; i++)
+    {
+        coord.X = snake.body[i].x;
+        coord.Y = snake.body[i].y;
+        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 
-		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+        if (i == 0)
+            putchar('@');
+        else
+            putchar('*');
+    }
+    // 去除蛇尾
+    coord.X = lastX;
+    coord.Y = lastY;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+    putchar(' ');
 
-		if (i == 0)
-			putchar('@');
-		else
-			putchar('*');
-	}
+    // 画食物
+    coord.X = food.x;
+    coord.Y = food.y;
 
-	// 画食物
-	coord.X = food.X;
-	coord.Y = food.Y;
-
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-
-	putchar('#');
-
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+    putchar('#');
 }
 ```
 
@@ -145,101 +182,182 @@ initUI(){
 开始游戏：
 
 ```c
-void playGame（void）
+// 启动游戏
+void playGame()
 {
-	char key = 'd'; // 默认蛇向右移动
+    char key = 'd';
 
-	// 蛇头和墙壁的碰撞：
+    // 判断蛇撞墙
+    while (snake.body[0].x >= 0 && snake.body[0].x < WIDE && snake.body[0].y >= 0 && snake.body[0].y < HIGH)
+    {
+        // 更新蛇
+        initUI();
 
-	while ( 判断是否撞墙 ) {
+        // 接收用户按键输入 asdw
+        if (_kbhit())
+        {
+            // 为真时，说明用户按下按键
+            key = _getch();
+        }
 
-		// 重画蛇身 intiUI
+        switch (key)
+        {
+        case 'w':
+        {
+            kx = 0;
+            ky = -1;
+            break;
+        }
+        case 's':
+        {
+            kx = 0;
+            ky = +1;
+            break;
+        }
+        case 'd':
+        {
+            kx = +1;
+            ky = 0;
+            break;
+        }
+        case 'a':
+        {
+            kx = -1;
+            ky = 0;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
 
-		// 接收用户键盘输入。
-		// 在全局 添加：kx， ky --》 根据 asdw 按键得不同坐标，影响蛇头
+        // 蛇头撞身体：蛇头 == 任意一节身体
+        for (size_t i = 1; i < snake.size; i++)
+        {
+            if (snake.body[0].x == snake.body[i].x && snake.body[0].y == snake.body[i].y)
+            {
+                // 游戏结束
+                return;
+            }
+        }
 
-		// 蛇头和身体的碰撞
+        // 蛇头撞食物
+        if (snake.body[0].x == food.x && snake.body[0].y == food.y)
+        {
+            // 食物消失
+            initFood();
+            // 身体增长
+            snake.size++;
+            // 加分
+            score += 10;
+            // 加速
+            sleepTime -= 10;
+        }
 
-		// 蛇与食物的碰撞
-			
-		// 蛇身体移动 ： 前一节给后一节赋值，蛇头收 kx ky 的影响。
+        // 存储蛇尾坐标
+        lastX = snake.body[snake.size - 1].x;
+        lastY = snake.body[snake.size - 1].y;
 
-		system("cls");  清屏 -- 去除蛇尾。
-	}
+        // 蛇移动，前一节身体给后一节身体赋值
+        for (size_t i = snake.size - 1; i > 0; i--)
+        {
+            snake.body[i].x = snake.body[i - 1].x;
+            snake.body[i].y = snake.body[i - 1].y;
+        }
+        // 蛇头坐标根据用户按键，修改
+        snake.body[0].x += kx;
+        snake.body[0].y += ky;
+
+        Sleep(sleepTime);
+        // 清屏
+        // system("cls");
+    }
 }
 ```
 
 蛇头和墙壁的碰撞：
 
 ```c
-snake.body[0].X > 0 && snake.body[0].X < WIDE 
-&&
-snake.body[0].Y > 0 && snake.body[0].Y < HIGH
+snake.body[0].x >= 0 && snake.body[0].x < WIDE 
+&& 
+snake.body[0].y >= 0 && snake.body[0].y < HIGH
 ```
 
 蛇头和身体的碰撞：蛇头的坐标和任意一节身体的坐标完全一致
 
 ```c
-for (i = 1; i < snake.size; i++)
+// 蛇头撞身体：蛇头 == 任意一节身体
+for (size_t i = 1; i < snake.size; i++)
 {
-	if (snake.body[0].X == snake.body[i].X && snake.body[0].Y == snake.body[i].Y )
-	{
-		// 终止游戏
-		return ;
-	}
+    if (snake.body[0].x == snake.body[i].x && snake.body[0].y == snake.body[i].y)
+    {
+        // 游戏结束
+        return;
+    }
 }
 ```
 	
 蛇头和食物的碰撞：
 
 ```c
-if (snake.body[0].X == food.X && snake.body[0].Y == food.Y)
+// 蛇头撞食物
+if (snake.body[0].x == food.x && snake.body[0].y == food.y)
 {
-	// 蛇身增长： snake.size++;
-	// 食物消失：（产生一个新食物）initFood（）
-
-	// 加分：score += 10;
-
-	//加速：sleepSecond -= 20;
+    // 食物消失
+    initFood();
+    // 身体增长
+    snake.size++;
+    // 加分
+    score += 10;
+    // 加速
+    sleepTime -= 10;
 }
+
+// 存储蛇尾坐标
+lastX = snake.body[snake.size - 1].x;
+lastY = snake.body[snake.size - 1].y;
 ```
 
-蛇移动：前一节身体给后一节身体赋值。 蛇头按照 `aswd` 换算的坐标值进行变换。`
+蛇移动：前一节身体给后一节身体赋值。蛇头按照 `aswd` 换算的坐标值进行变换
 
 ```c
-for (size_t i = snake.size-1; i > 0; i--)
+// 蛇移动，前一节身体给后一节身体赋值
+for (size_t i = snake.size - 1; i > 0; i--)
 {
-	snake.body[i].X = snake.body[i - 1].X;
-	snake.body[i].Y = snake.body[i - 1].Y;
+    snake.body[i].x = snake.body[i - 1].x;
+    snake.body[i].y = snake.body[i - 1].y;
 }
-snake.body[0].X += kx;		// 蛇头坐标根据用户按键，修改。
-snake.body[0].Y += ky;
+// 蛇头坐标根据用户按键，修改
+snake.body[0].x += kx;
+snake.body[0].y += ky;
 ```
 
 画墙：
 
 ```c
-void initWall(void)
+// 画墙
+void initWall()
 {
-	for (size_t i = 0; i <= HIGH; i++)	// 多行
-	{
-		for (size_t j = 0; j <= WIDE; j++)			// 一行中的多列
-		{
-			if (j == WIDE)
-			{
-				printf("|");
-			}
-			else if (i == HIGH)
-			{
-				printf("_");
-			}
-			else
-			{
-				printf(" ");
-			}
-		}
-		printf("\n");
-	}
+    for (int i = 0; i <= HIGH; i++)
+    {
+        for (int j = 0; j <= WIDE; j++)
+        {
+            if (j == WIDE)
+            {
+                printf("|");
+            }
+            else if (i == HIGH)
+            {
+                printf("_");
+            }
+            else
+            {
+                printf(" ");
+            }
+        }
+        printf("\n");
+    }
 }
 ```
 
@@ -248,19 +366,18 @@ void initWall(void)
 定义全局变量：`lastX, lastY;`
 
 ```c
-lastX = snake.body[snake.size-1].X ;
-
-lastY = snake.body[snake.size-1].Y ;
+// 存储蛇尾坐标
+lastX = snake.body[snake.size - 1].x;
+lastY = snake.body[snake.size - 1].y;
 ```
 
-在 `initUI` 中，将蛇尾替换为 ' '
+在 `initUI` 中，将蛇尾替换为 `' '`
 
 ```c
+// 去除蛇尾
 coord.X = lastX;
 coord.Y = lastY;
-
-setConsoleCursorPosition(GetSTDHandler(STD_OUTPUT_HANDLE), coord);
-
+SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 putchar(' ');
 ```
 
@@ -269,24 +386,23 @@ putchar(' ');
 ```c
 typedef struct _CONSOLE_CURSOR_INFO {
 	DWORD  dwSize;		// 大小
-    BOOL   bVisible;	// 是否可见。
+    BOOL   bVisible;	// 是否可见
 } CONSOLE_CURSOR_INFO;
 ```
 
 定义结构体变量：
 
 ```c
-CONSOLE_CURSOR_INFO  cci;
-
+// 去除光标
+CONSOLE_CURSOR_INFO cci;
 cci.dwSize = sizeof(cci);
-
-cci.bVisible = FALSE; //  0 假 --- 不可见
+cci.bVisible = FALSE;
 ```
 
 设置光标不可见生效：
 
 ```c
-setConsoleCursorInfo(GetSTDHandler(STD_OUTPUT_HANDLE), &cci);
+SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
 ```
 
 在 `main` 函数中，调用一次即可生效
@@ -295,17 +411,32 @@ setConsoleCursorInfo(GetSTDHandler(STD_OUTPUT_HANDLE), &cci);
 
 `playGame` 调用结束时，打印全局 `score` 值
 
+```c
+// 打印分数
+void showScore()
+{
+    // 将光标默认位置移动至不干扰游戏的任意位置
+    COORD coord;
+
+    coord.X = 0;
+    coord.Y = HIGH + 2;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+
+    printf("Game Over!!!\n");
+    printf("Score: %d\n\n\n", score);
+}
+```
+
 加速：
 
 全局定义变量：
 
 ```c
-sleepSecond = 400;
-Sleep(sleepSecond);
+sleepTime = 400;
+Sleep(sleepTime);
 
 // 成功吃食物
-sleepSecond -= 20;
+sleepTim -= 10;
 ```
 
 ---
-		

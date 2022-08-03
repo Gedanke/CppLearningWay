@@ -9,46 +9,50 @@
 #include <conio.h>
 #include <Windows.h>
 
-#define WIDE 60 // 宽度
-#define HIGH 20 // 高度
+#define HIGH 20
+#define WIDE 60
 
-// 一个身体的对象
-struct BODY
+// 身体对象
+struct Body
 {
-    int X;
-    int Y;
+    int x;
+    int y;
 };
 
-// 定义蛇对象
-struct SNAKE
+// 蛇对象
+struct Snake
 {
-    struct BODY body[WIDE * HIGH];
+    struct Body body[HIGH * WIDE];
     int size;
-} snake; // 一个蛇对象
+} snake;
 
-// 定义食物对象
-struct FOOD
+// 食物对象
+struct Food
 {
-    int X;
-    int Y;
-} food1; // 一个食物对象
+    int x;
+    int y;
+} food;
 
-int score = 0; // 分数
+// 得分
+int score = 0;
 
-int kx = 0; // 用户按下 asdw 任意一个按键所得到的 坐标值。
+// 用户键盘输入 wasd 之一的坐标
+int kx = 0;
 int ky = 0;
 
-int lastX = 0; // 蛇尾的坐标。
+// 蛇尾坐标
+int lastX = 0;
 int lastY = 0;
 
-int sleepSecond = 400;
+// 移动时间间隔
+int sleepTime = 400;
 
-// 声明函数
-void initSnake(void);
-void initFood(void);
-void initUI(void);
-void playGame(void);
-void initWall(void);
-void showScore(void);
+// 相关函数
+void initSnake();
+void initFood();
+void initUI();
+void playGame();
+void initWall();
+void showScore();
 
 #endif

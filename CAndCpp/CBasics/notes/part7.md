@@ -96,6 +96,7 @@ int main()
     return 0;
 }
 ```
+
 注意：`&` 可以取得一个变量在内存中的地址。但是，不能取寄存器变量，因为寄存器变量不在内存里，而在 CPU 里面，所以是没有地址的
 
 ### 通过指针间接修改变量的值
@@ -583,7 +584,7 @@ int ***t = &q;
 // ***t 就是 a
 ```
 
-demo:
+例如:
 
 ```c
 int a = 0;
@@ -883,7 +884,7 @@ int main(void) == int main();
  int main(int argc, char *argv[]) == int main(int argc, char **argv);
 ```
 
-* `main` 函数是操作系统调用的，第一个参数标明 `argc` 数组的成员数量，`argv` 数组的每个成员都是 `char *` 类型
+* `main` 函数是操作系统调用的，第一个参数标明 `argc` 数组的成员数量，`argv` 数组的每个成员都是 `char*` 类型
 * `argc` 表示给 `main` 函数传递的参数的总个数，程序名字本身算一个参数
 * `argv` 是命令行参数的字符串数组，数组的每一个元素都是字符串 `char*` 
 
@@ -1139,10 +1140,10 @@ char *strcpy(char *dest, const char *src);
     * `dest`：目的字符串首地址
     * `src`：源字符首地址
 * 返回值：
-	成功：返回 `dest` 字符串的首地址
-	失败：`NULL`
+	* 成功：返回 `dest` 字符串的首地址
+	* 失败：`NULL`
 
-注意：如果参数 `dest` 所指的内存空间不够大，可能会造成缓冲溢出的错误情况，字体上不安全
+注意：如果参数 `dest` 所指的内存空间不够大，可能会造成缓冲溢出的错误情况，总体上不安全
 
 ```c
 #include <stdio.h>
@@ -1209,8 +1210,8 @@ char *strncpy(char *dest, const char *src, size_t n);
     * `src`：源字符首地址
     * `n`：指定需要拷贝字符串个数
 * 返回值：
-	成功：返回 `dest` 字符串的首地址
-	失败：`NULL`
+    * 成功：返回 `dest` 字符串的首地址
+	* 失败：`NULL`
 
 ```c
 #include <stdio.h>
@@ -1377,10 +1378,10 @@ int strncmp(const char *s1, const char *s2, size_t n);
     * `s1`：字符串1 首地址
 	* `s2`：字符串2 首地址
 	* `n`：指定比较字符串的数量
-返回值：
-	相等：0
-	大于：> 0
-	小于：< 0
+* 返回值：
+	* 相等：0
+	* 大于：> 0
+	* 小于：< 0
 
 ```c
 #include <stdio.h>

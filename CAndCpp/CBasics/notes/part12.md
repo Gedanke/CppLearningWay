@@ -8,7 +8,7 @@
 
 ![](../photos/part12/1.png)
 
-Linux 具有如下的优秀的特点：
+Linux 具有如下优秀的特点：
 
 * 开放性
 * 完全免费
@@ -20,7 +20,7 @@ Linux 具有如下的优秀的特点：
 * 可靠的系统安全性
 * 良好的可移植性
 
-X Window 系统是一个非常出色的图形窗口系统，是类UNIX系统的图形用户界面的工业标准。X Window系统最重要的特征之一就是它的结构与设备无关
+X Window 系统是一个非常出色的图形窗口系统，是类 UNIX 系统的图形用户界面的工业标准。X Window 系统最重要的特征之一就是它的结构与设备无关
 
 X Window 系统的主要特点有如下几点：
 
@@ -59,7 +59,7 @@ Unix/Linux 路径由到达定位文件的目录组成。在 Unix/Linux 系统中
 
 在 windows 平台下，打开“计算机”，看到的是一个个的驱动器盘符，每个驱动器都有自己的根目录结构，这样形成了多个树并列的情形
 
-在 Linux 下，我们是看不到这些驱动器盘符，看到的是文件夹(目录)
+在 Linux 下是看不到这些驱动器盘符，看到的是文件夹(目录)
 
 1994 年，Linux 对根文件目录做了统一的规范，推出 FHS(Filesystem Hierarchy Standard)的 Linux 文件系统层次结构标准。FHS 标准规定了 Linux 根目录各文件夹的名称及作用，统一了 Linux 界命名混乱的局面
 
@@ -97,7 +97,7 @@ Unix/Linux 对数据文件(`*.mp3、*.bmp`)，程序文件(`*.c、*.h、*.o`)，
 
 #### 文件分类
 
-通常，Unix/Linux 系统中常用的文件类型有5种：普通文件、目录文件、设备文件、管道文件和链接文件
+通常，Unix/Linux 系统中常用的文件类型有 5 种：普通文件、目录文件、设备文件、管道文件和链接文件
 
 * 普通文件
 
@@ -272,7 +272,7 @@ Mandatory arguments to long options are mandatory for short options too.
 * System calls(系统调用，如 `open，write`)
 * Library functions(库函数，如 `printf，fopen`)
 * Special devices(设备文件的说明，`/dev` 下各种设备）
-* File formats(文件格式，如 passwd)
+* File formats(文件格式，如 `passwd`)
 * Games and toys(游戏和娱乐)
 * Miscellaneous(杂项、惯例与协定等，例如 Linux 档案系统、网络协定、ASCII 码；`environ`全局变量)
 * Administrative Commands(管理员命令，如 `ifconfig`)
@@ -295,7 +295,7 @@ man [选项] 命令名
 | `h` | 列出所有功能键 |
 | `/word` | 搜索 `word` 字符串 |
 
-如想查看 `ls` 的用法：`man 1 ls` (1：为数字“1”，代表第 1 个 section，标准命令)
+如想查看 `ls` 的用法：`man 1 ls`(1：为数字 1，代表第 1 个 section，标准命令)
 
 ```sh
 # man 1 ls
@@ -353,7 +353,7 @@ DESCRIPTION
  Manual page printf(1) line 1 (press h for help or q to quit)
 ```
 
-`PRINTF(1)` 1，代表标准命令
+`PRINTF(1)` 前置 1 代表标准命令
 
 所以，使用 `man` 手册时，最好指定章节号
 
@@ -387,7 +387,7 @@ SYNOPSIS
 
 * 自动补全
 
-在敲出命令的前几个字母的同时，按下 `tab` 键，系统会自动帮我们补全命令
+在敲出命令的前几个字母的同时，按下 `tab` 键，系统会自动补全命令
 
 * 历史命令
 
@@ -449,7 +449,7 @@ total 24K
 
 Linux 允许将命令执行结果重定向到一个文件，本应显示在终端上的内容保存到指定文件中
 
-如：`ls > test.txt` (`test.txt` 如果不存在，则创建，存在则覆盖其内容)
+如：`ls > test.txt`(`test.txt` 如果不存在，则创建，存在则覆盖其内容)
 
 ```sh
 # ls
@@ -748,6 +748,7 @@ tar [参数] 打包文件名 文件
 常用参数：
 
 | 参数 | 含义 |
+|:----:|:----:|
 | `-c` | 生成档案文件，创建打包文件 |
 | `-v` | 列出归档解档的详细过程，显示进度|
 | `-f` | 指定档案文件名称，`f` 后面一定是 `.tar` 文件，所以必须放选项最后 |
@@ -976,10 +977,10 @@ root@master:~#
 | `su 普通用户` | 切换到普通用户 |
 | `su - 普通用户` | 切换到普通用户，同时切换普通用户所在的目录 |
 
-##### 添加、删除组账号：groupadd、groupdel
+##### 添加、删除组账号：`groupadd、groupdel`
 
-* `groupadd 新建组账号`
-* `groupdel 组账号`
+* `groupadd 组账号名` 新建组账号
+* `groupdel 组账号名` 删除组账号
 * `cat /etc/group` 查看用户组
 
 ```sh
@@ -990,7 +991,7 @@ groupdel: group 'abc' does not exist
 root@master:~#
 ```
 
-##### 添加用户账号：useradd
+##### 添加用户账号：`useradd`
 
 在 Unix/Linux 中添加用户账号可以使用 `adduser` 或 `useradd` 命令，因为 `adduser` 命令是指向 `useradd` 命令的一个链接，因此，这两个命令的使用格式完全一样
 
@@ -1019,14 +1020,14 @@ useradd [参数] 新建用户账号
 | `useradd -d /home/a a -g test -m` | 创建一个用户名字叫 a，主目录在 `/home/a`，如果主目录不存在，就自动创建主目录，同时用户属于 test 组 |
 | `cat /etc/passwd` | 查看系统当前用户名 |
 
-##### 删除用户：userdel
+##### 删除用户：`userdel`
 
 | 命令 | 含义 |
 |:----:|:----:|
 | `userdel abc(用户名)` | 删除 abc 用户，但不会自动删除用户的主目录 |
 | `userdel -r abc(用户名) | 删除用户，同时删除用户的主目录 |
 
-##### 修改用户所在组：usermod
+##### 修改用户所在组：`usermod`
 
 使用方法：`usermod -g 用户组 用户名`
 
@@ -1055,7 +1056,7 @@ total 4
 root@master:/home#
 ```
 
-##### 设置用户密码：passwd
+##### 设置用户密码：`passwd`
 
 在 Unix/Linux 中，超级用户可以使用 passwd 命令为普通用户设置或修改用户口令。用户也可以直接使用该命令来修改自己的口令，而无需在命令后面使用用户名
 
@@ -1075,11 +1076,11 @@ root
 root@master:/home#
 ```
 
-##### 查询用户登录情况：last
+##### 查询用户登录情况：`last`
 
 不管是哪位用户从哪里登录，管理员都可以通过 `last` 命令查出，以及是否有人非法登录
 
-##### 修改文件权限：chmod
+##### 修改文件权限：`chmod`
 
 `chmod` 修改文件权限有两种使用格式：字母法与数字法
 
@@ -1104,7 +1105,7 @@ root@master:/home#
 | `w` | write 表示可写入，对于一个目录，如果没有 `w` 权限，那么就意味着不能在目录下创建新的文件 |
 | `x` | excute 表示可执行，对于一个目录，如果没有 `x` 权限，那么就意味着不能通过 `cd` 进入这个目录 |
 
-`chmod o+w file` 给文件 file 的其它用户增加写权限
+`chmod o+w file` 给文件 `file` 的其它用户增加写权限
 
 ```sh
 root@master:/home# ls
@@ -1129,7 +1130,7 @@ total 4.0K
 $
 ```
 
-`chmod u-r file` 给文件 file 的拥有者减去读的权限
+`chmod u-r file` 给文件 `file` 的拥有者减去读的权限
 
 ```sh
 $ ls -lh
@@ -1142,7 +1143,7 @@ total 4.0K
 $
 ```
 
-`chmod g=x file` 设置文件 file 的同组用户的权限为可执行，同时去除读、写权限
+`chmod g=x file` 设置文件 `file` 的同组用户的权限为可执行，同时去除读、写权限
 
 ```sh
 $ ls -lh
@@ -1210,7 +1211,7 @@ $
 
 如：`chmod 777 test/ -R` 递归 `test` 目录下所有文件加 777 权限
 
-##### 修改文件所有者：chown
+##### 修改文件所有者：`chown`
 
 使用方法：`chown 用户名 文件或目录名`
 
@@ -1223,7 +1224,7 @@ root@master:/home/abc# ll demo.txt
 root@master:/home/abc#
 ```
 
-##### 修改文件所属组：chgrp
+##### 修改文件所属组：`chgrp`
 
 使用方法：`chgrp 用户组名 文件或目录名`
 
@@ -1238,7 +1239,7 @@ root@master:/home/abc#
 
 #### 系统管理
 
-#### 查看进程信息：ps
+#### 查看进程信息：`ps`
 
 进程是一个具有一定独立功能的程序，它是操作系统动态执行的基本单元
 
@@ -1264,7 +1265,7 @@ root@master:/home/abc# ps -a
 root@master:/home/abc#
 ```
 
-#####  终止进程：kill
+##### 终止进程：`kill`
 
 `kill` 命令指定进程号的进程，需要配合 `ps` 使用
 
@@ -1308,7 +1309,7 @@ root@master:~# ps -a
 root@master:~#
 ```
 
-有些进程不能直接杀死，这时候需要加一个参数 `-9`，`-9` 代表强制结束
+有些进程不能直接杀死，这时需要加一个参数 `-9`，`-9` 代表强制结束
 
 ```sh
 root@master:~# ps -a
@@ -1330,14 +1331,14 @@ root@master:~# ps -a
 root@master:~#
 ```
 
-##### 后台程序：&、jobs、fg
+##### 后台程序：`&、jobs、fg`
 
 * 用户可以将一个前台执行的程序调入后台执行，方法为：`命令 &`
 * 如果程序已经在执行，`ctrl + z` 可以将程序调入后台
 * `jobs` 查看后台运行程序
 * `fg 编号`(编号为通过 `jobs` 查看的编号)，将后台运行程序调出到前台
 
-##### 关机重启：reboot、shutdown、init
+##### 关机重启：`reboot、shutdown、init`
 
 | 命令 | 含义 |
 |:----:|:----:|
@@ -1361,8 +1362,7 @@ root@master:~#
 * `Ctrl + Alt + F2` 切换到字符界面
 * `Ctrl + Alt + F7` 切换到图形界面
 
-
-##### 查看或配置网卡信息：ifconfig
+##### 查看或配置网卡信息：`ifconfig`
 
 `ifconfig`，它会显示所有网卡的信息:
 
@@ -1405,7 +1405,7 @@ root@master:/home/root/codes/temp#
 | `RX bytes` | 接收数据字节统计 |
 | `TX bytes` | 发送数据字节统计 |
 
-我们可以通过 `ifconfig` 配置网络参数：
+可以通过 `ifconfig` 配置网络参数：
 
 * 只有 root 才能用 `ifconfig` 配置参数，其他用户只能查看网络配置
 * `ifconfig 网络接口名称 [地址协议类型] [address] [参数]`
@@ -1439,7 +1439,7 @@ method=manual
 addresses1=IP地址; 24; 默认网关;
 ```
 
-#####  测试远程主机连通性：ping
+##### 测试远程主机连通性：`ping`
 
 * `ping` 通过 ICMP 协议向远程主机发送 `ECHO_REQUEST` 请求，期望主机回复 `ECHO_REPLY` 消息
 * 通过 `ping` 命令可以检查是否与远程主机建立了 TCP/IP 连接
@@ -1532,6 +1532,7 @@ vi 有输入和命令两种工作模式。输入模式(也叫插入模式)用于
 #### vi 的删除和修改功能
 
 | 按键 | 功能 |
+|:----:|:----:|
 | `[n]x` | 删除光标后 `n` 个字符 |
 | `[n]X` | 删除光标前 `n` 个字符 |
 | `D` | 删除光标所在开始到此行尾的字符 |
@@ -1614,7 +1615,7 @@ SSH 提供了一些命令和 shell 用来登录远程服务器。在默认情况
 | 参数 | 含义 |
 |:----:|:----:|
 | `RemoteUserName` | 远程用户名 |
-| `RemoteHostIp` | 远程 `ip` |
+| `RemoteHostIp` | 远程 ip |
 | `RemoteFile` | 远程文件，可带上路径 |
 | `FileName` | 拷贝到本地后的名字，可带上路径，不带路径拷贝到当前目录 |
 

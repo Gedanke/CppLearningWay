@@ -1,0 +1,10 @@
+#英雄的Id
+heroId:1
+#英雄的姓名
+heroName:德玛西亚
+#英雄的攻击力
+heroAtk:1000
+#英雄的防御力
+heroDef:500
+#英雄的简介
+heroInfo:前排坦克

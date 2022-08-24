@@ -1,0 +1,4 @@
+﻿  staticLibTest.cpp
+staticLibTest.obj : error LNK2019: 无法解析的外部符号 "int __cdecl myAdd(int,int)" (?myAdd@@YAHHH@Z)，函数 main 中引用了该符号
+MSVCRTD.lib(exe_winmain.obj) : error LNK2019: 无法解析的外部符号 WinMain，函数 "int __cdecl invoke_main(void)" (?invoke_main@@YAHXZ) 中引用了该符号
+D:\坚果云\我的坚果云\now\job\c_plus_plus\CppLearningWay\CAndCpp\CAdvanced\codes\part9\staticLibDemo\x64\Debug\staticLibTest.exe : fatal error LNK1120: 2 个无法解析的外部命令

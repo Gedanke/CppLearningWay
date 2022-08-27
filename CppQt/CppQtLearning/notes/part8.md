@@ -159,9 +159,47 @@ for(int i=0;i<5;i++){
     * `ui->label_movie->setMovie(movie);`
     * `movie->start();`
 
+```c
+// 点击按钮切换 tab
+// 默认显示第一个 tab1
+ui->stackedWidget->setCurrentIndex(0);
+this->connect(ui->pBtn1,&QPushButton::clicked,[=](){
+    ui->stackedWidget->setCurrentIndex(0);
+});
+this->connect(ui->pBtn2,&QPushButton::clicked,[=](){
+    ui->stackedWidget->setCurrentIndex(1);
+});
+this->connect(ui->pBtn3,&QPushButton::clicked,[=](){
+    ui->stackedWidget->setCurrentIndex(2);
+});
+this->connect(ui->pBtn4,&QPushButton::clicked,[=](){
+    ui->stackedWidget->setCurrentIndex(3);
+});
+
+// 下拉框的使用
+ui->comboBox->addItem("风");
+ui->comboBox->addItem("雷");
+ui->comboBox->addItem("水");
+ui->comboBox->addItem("火");
+
+// 点击按钮选择下拉框内容
+this->connect(ui->pBtnLei,&QPushButton::clicked,[=](){
+//        ui->comboBox->setCurrentIndex(1);
+    ui->comboBox->setCurrentText("雷");
+});
+
+// 利用 QLabel 显示图片
+ui->label_image->setPixmap(QPixmap(":/Image/down.png"));
+
+// 利用 QLabel 显示动图
+QMovie* movie=new QMovie(":/Image/mario.gif");
+ui->label_gif->setMovie(movie);
+movie->start();
+```
+
 ### QLabel 控件使用
 
-QLabel 是最常用的控件之一，其功能很强大，可以用来显示文本，图片和动画等
+`QLabel` 是最常用的控件之一，其功能很强大，可以用来显示文本，图片和动画等
 
 #### 显示文字(普通文本、html)
 
@@ -288,29 +326,103 @@ void setTextMargins(int left, int top, int right, int bottom);
 
 Qt 中控件的使用方法可参考 Qt 提供的帮助文档
 
+![](../photos/part8/2.png)
+
 ---
 
 ## 自定义控件
+
+* 右键项目- 添加新文件
+* Qt- Qt 设计师界面类
+* 在 ui 文件中设计自定义控件
+* 在主窗口中拖拽 `Widget` 做提升的操作
+* 在自定义控件中 封装对外接口
+    * `SpinBox` 和 `slider` 控件交互
+    * `getValue` 获取显示数字
+    * `setValue` 设置数字
 
 在搭建 Qt 窗口界面的时候，在一个项目中很多窗口，或者是窗口中的某个模块会被经常性的重复使用。一般遇到这种情况我们都会将这个窗口或者模块拿出来做成一个独立的窗口类，以备以后重复使用
 
 在使用 Qt 的 ui 文件搭建界面的时候，工具栏栏中只提供了标准的窗口控件，如果想使用自定义控件怎么办
 
-例如：从 `QWidget` 派生出一个类 `SmallWidget`，实现了一个自定窗口
+例如：从 `QWidget` 派生出一个类 `MineWidget`，实现了一个自定窗口
 
-那么这个 `SmallWidget` 可以作为独立的窗口显示，也可以作为一个控件来使用：
+```minewidget.h`
 
-打开 Qt 的 `.ui`文件，因为 `SmallWidget` 是派生自 `Qwidget` 类，所以需要在 `ui` 文件中先放入一个 `QWidget` 控件，然后再上边鼠标右键
+```c
+#ifndef MINEWIDGET_H
+#define MINEWIDGET_H
 
-弹出提升窗口部件对话框
+#include <QWidget>
 
-添加要提升类 `SmallWidget` 的名字，然后选择添加
+namespace Ui {
+class MineWidget;
+}
 
-添加之后，类名会显示到上边的列表框中，然后单击提升按钮，完成操作
+class MineWidget : public QWidget
+{
+    Q_OBJECT
 
-可以看到，这个窗口对应的类从原来的 `QWidget` 变成了 `SmallWidget`
+public:
+    explicit MineWidget(QWidget *parent = nullptr);
+    ~MineWidget();
 
-再次运行程序，这个 `widget` 中就能显示出自定义的窗口了
+    // 设置值
+    void setValue(int value);
+
+    // 获取值
+    int getValue();
+
+private:
+    Ui::MineWidget *ui;
+};
+
+#endif // MINEWIDGET_H
+```
+
+```minewidget.c`
+
+```c
+#include "minewidget.h"
+#include "ui_minewidget.h"
+
+MineWidget::MineWidget(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::MineWidget)
+{
+    ui->setupUi(this);
+
+    // 修改 SpinBox 右侧的滚动条跟着移动
+    void(QSpinBox::* spinBoxP)(int) = &QSpinBox::valueChanged;
+    this->connect(ui->spinBox,spinBoxP,[=](int value){
+        ui->horizontalSlider->setValue(value);
+    });
+
+    // 右侧滚动条移动，左侧数字发生改变
+    this->connect(ui->horizontalSlider,&QSlider::valueChanged,[=](int value){
+        ui->spinBox->setValue(value);
+    });
+}
+
+MineWidget::~MineWidget()
+{
+    delete ui;
+}
+
+// 设置值
+void MineWidget::setValue(int value){
+    ui->horizontalSlider->setValue(value);
+}
+
+// 获取值
+int MineWidget::getValue(){
+    return ui->horizontalSlider->value();
+}
+```
+
+这个 `MineWidget` 可以作为独立的窗口显示，也可以作为一个控件来使用
+
+运行程序，这个 `widget` 中就能显示出自定义的窗口了
 
 ![](../photos/part8/1.png)
 

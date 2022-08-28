@@ -10,6 +10,7 @@
 * [对话框 QDialog](./notes/part6.md)
 * [布局管理器](./notes/part7.md)
 * [常用控件](./notes/part8.md)
-582
+* [Qt 消息机制和事件](./notes/part9.md)
+
 
 ---

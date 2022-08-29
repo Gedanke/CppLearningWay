@@ -12,5 +12,6 @@
 * [常用控件](./notes/part8.md)
 * [Qt 消息机制和事件](./notes/part9.md)
 * [绘图和绘图设备](./notes/part10.md)
+* [文件系统](./notes/part11.md)
 
 ---

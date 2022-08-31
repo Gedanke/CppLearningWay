@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-解释：
+**解释**：
 
 * `main` 函数中的参数 `int argc, char *argv[]`，其中 `argc` 是命令行变量数量，`char *argv[]` 是命令行参数数组
 * Qt 系统提供的标准类名声明头文件没有 `.h` 后缀

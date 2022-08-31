@@ -1,4 +1,4 @@
-#  对话框 QDialog
+# 对话框 QDialog
 
 ---
 

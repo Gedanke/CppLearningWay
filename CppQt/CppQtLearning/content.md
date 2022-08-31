@@ -13,5 +13,6 @@
 * [Qt 消息机制和事件](./notes/part9.md)
 * [绘图和绘图设备](./notes/part10.md)
 * [文件系统](./notes/part11.md)
+* [翻金币项目](./notes/project.md)
 
 ---

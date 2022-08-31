@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QTimer>
 #include <QLabel>
+#include <QSound>
 
 ChooseLevelScene::ChooseLevelScene(QWidget *parent) : QMainWindow(parent)
 {
@@ -32,8 +33,12 @@ void ChooseLevelScene::initScene(){
     // 创建按钮菜单项
     QAction* quitAction=startMenu->addAction("退出");
 
+    // 返回音效
+    QSound* backSound=new QSound(":/res/BackButtonSound.wav",this);
+
     // 点击退出，退出按钮
     this->connect(quitAction,&QAction::triggered,[=](){
+        backSound->play();
         this->close();
     });
 }
@@ -45,8 +50,12 @@ void ChooseLevelScene::initBack(){
     closeBtn->setParent(this);
     closeBtn->move(this->width()-closeBtn->width(),this->height()-closeBtn->height());
 
+    // 返回音效
+    QSound* backSound=new QSound(":/res/BackButtonSound.wav",this);
+
     // 返回按钮功能
     this->connect(closeBtn,&MyPushButton::clicked,[=](){
+        backSound->play();
         QTimer::singleShot(500,this,[=](){
             this->hide();
             // 触发自定义信号
@@ -57,6 +66,9 @@ void ChooseLevelScene::initBack(){
 
 // 选择关卡按钮功能
 void ChooseLevelScene::initLevel(){
+    // 选择关卡音效
+    QSound* chooseSound=new QSound(":/res/TapButtonSound.wav",this);
+
     for(int i=0;i<20;i++){
         MyPushButton* menuBtn=new MyPushButton(":/res/LevelIcon.png");
         menuBtn->setParent(this);
@@ -65,17 +77,22 @@ void ChooseLevelScene::initLevel(){
         // 监听选择关卡按钮的信号槽
         this->connect(menuBtn,&MyPushButton::clicked,[=](){
             // qDebug() <<"您选择的是第 "<< i+1 << " 关";
+            // 选择关卡音效
+            chooseSound->play();
+
             if(this->pScene==NULL){
-                // 游戏场景最好不用复用，直接移除掉创建新的场景
+                // 游戏场景最好别复用，直接移除掉创建新的场景
                 // 隐藏当前窗口
                 this->hide();
                 // 将选择的关卡号传入给 PlayerScene
                 this->pScene=new PlayScene(i+1);
+                this->pScene->setGeometry(this->geometry());
                 // 展现具体关卡窗口
                 this->pScene->show();
 
                 // 监听游戏场景中点击返回按钮，发送的自定义信号
                 this->connect(this->pScene,&PlayScene::chooseSceneBack,[=](){
+                    this->setGeometry(this->pScene->geometry());
                     this->show();
                     delete this->pScene;
                     this->pScene=NULL;

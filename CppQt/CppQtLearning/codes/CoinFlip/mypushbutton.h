@@ -30,9 +30,8 @@ public:
     // 鼠标释放事件
     void mouseReleaseEvent(QMouseEvent *e) override;
 
-
 signals:
-    public slots:
+public slots:
 
 };
 

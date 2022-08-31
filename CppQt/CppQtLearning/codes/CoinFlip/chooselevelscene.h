@@ -29,7 +29,7 @@ signals:
     // 点击返回按钮后，抛出自定义信号
     void chooseSceneBack();
 
-    public slots:
+public slots:
 
 };
 

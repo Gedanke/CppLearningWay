@@ -3,6 +3,7 @@
 #include "mypushbutton.h"
 #include <QPainter>
 #include <QTimer>
+#include <QSound>
 
 MainScene::MainScene(QWidget *parent)
     : QMainWindow(parent)
@@ -62,6 +63,8 @@ void MainScene::paintEvent(QPaintEvent *){
 
 // 创建开始按钮，并实现对应功能
 void MainScene::initStart(){
+    QSound* startSound=new QSound(":/res/TapButtonSound.wav",this);
+
     // 创建开始按钮
     MyPushButton* startBtn=new MyPushButton(":/res/MenuSceneStartButton.png");
     startBtn->setParent(this);
@@ -69,6 +72,8 @@ void MainScene::initStart(){
 
     // 监听事件，执行特效
     this->connect(startBtn,&MyPushButton::clicked,[=](){
+        // 开始音效
+        startSound->play();
         startBtn->zoom1();
         startBtn->zoom2();
 
@@ -76,8 +81,16 @@ void MainScene::initStart(){
         QTimer::singleShot(500,this,[=](){
             // 隐藏窗口
             this->hide();
+            this->chooseScene->setGeometry(this->geometry());
             // 进入选择窗口
             this->chooseScene->show();
+
+            // 监听选择场景返回按钮
+            this->connect(this->chooseScene,&ChooseLevelScene::chooseSceneBack,[=](){
+                this->setGeometry(this->chooseScene->geometry());
+                // 进入选择窗口
+                this->show();
+            });
         });
     });
 }

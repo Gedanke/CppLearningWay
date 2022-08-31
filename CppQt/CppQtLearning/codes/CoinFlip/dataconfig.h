@@ -16,7 +16,7 @@ public:
     QMap<int, QVector<QVector<int>>> mData;
 
 signals:
-    public slots:
+public slots:
 
 };
 

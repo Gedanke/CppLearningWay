@@ -77,7 +77,7 @@
       <widget class="QLabel" name="labelID">
        <property name="font">
         <font>
-         <pointsize>14</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -92,7 +92,7 @@
       <widget class="QLabel" name="labelName">
        <property name="font">
         <font>
-         <pointsize>14</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -107,7 +107,7 @@
       <widget class="QLabel" name="labelScore">
        <property name="font">
         <font>
-         <pointsize>14</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">

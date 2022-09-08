@@ -27,7 +27,7 @@
 
 `makefile` 由一组规则组成，规则如下:
 
-```make
+```makefile
 目标: 依赖
 (tab)命令
 ```
@@ -55,7 +55,7 @@
 
 第一个版本的 `makefile`:
 
-```make
+```makefile
 main: main.c fun1.c fun2.c sum.c
 	gcc -o main main.c fun1.c fun2.c sum.c -I ./
 ```
@@ -89,7 +89,7 @@ main: main.c fun1.c fun2.c sum.c
 
 第二个版本:
 
-```make
+```makefile
 main: main.o fun1.o fun2.o sum.o
 	gcc -o main main.o fun1.o fun2.o sum.o
 
@@ -287,6 +287,131 @@ rm -f main  ./fun1.o  ./fun2.o  ./sum.o  ./main.o
 # 
 ```
 
+## makefile 综合案例
+
+下面展示一个结合静态库，动态库，`makefile` 的综合案例
+
+代码 `tree` 如下:
+
+```sh
+# tree
+.
+├── alib
+│   ├── add.c
+│   ├── divd.c
+│   ├── makefile
+│   ├── mul.c
+│   └── sub.c
+├── app
+│   ├── main.c
+│   └── makefile
+├── include
+│   └── head.h
+└── slib
+    ├── add.c
+    ├── divd.c
+    ├── makefile
+    ├── mul.c
+    └── sub.c
+
+4 directories, 13 files
+```
+
+* 在 `alib` 中，使用 `makefile` 将文件编译成一个静态库，`makefile` 内容如下:
+
+```makefile
+src= $(wildcard *.c)
+CC= gcc
+object=$(patsubst %.c, %.o, $(src))
+target= libtest1.a
+
+$(target): $(object)
+	ar rcs $@ $^
+
+%.o: %.c
+	$(CC) -o $@ -c $<
+
+.PHONY: clean
+clean:
+	-rm -f $(target) $(object)
+```
+
+* 在 `slib` 中，使用 `makefile` 将文件编译成一个动态库，`makefile` 内容如下:
+
+```makefile
+src= $(wildcard *.c)
+object= $(patsubst %.c, %.o, $(src))
+target= libtest2.so
+CC= gcc
+
+$(target): $(object)
+	$(CC) -shared -o $@ $^
+	cp $@ /lib
+
+%.o: %.c
+	$(CC) -o $@ -c -fpic $<
+
+.PHONY: clean
+clean:
+	-rm -f $(target) $(object)
+```
+
+* 在 `app` 中，分别使用这两个库，`makefile` 内容如下:
+
+```makefile
+src= $(wildcard *.c)
+object= $(patsubst %.c, %.o, $(src))
+target= main
+CC= gcc
+
+# 使用静态库
+# $(target): $(object)
+# 	$(CC) -o $@ $^ -L ../alib -l test1
+
+# 使用动态库
+$(target): $(object)
+	$(CC) -o $@ $^ -L ../slib -l test2
+
+%.o: %.c
+	$(CC) -o $@ -c $< -I ../include
+
+.PHONY: clean
+clean:
+	-rm -f $(target) $(object)
+```
+
+输出结果如下:
+
+```sh
+# cd alib/
+# make
+gcc -o divd.o -c divd.c
+gcc -o mul.o -c mul.c
+gcc -o add.o -c add.c
+gcc -o sub.o -c sub.c
+ar rcs libtest1.a divd.o mul.o add.o sub.o
+# cd ..
+# cd slib/
+# make
+gcc -o divd.o -c -fpic divd.c
+gcc -o mul.o -c -fpic mul.c
+gcc -o add.o -c -fpic add.c
+gcc -o sub.o -c -fpic sub.c
+gcc -shared -o libtest2.so divd.o mul.o add.o sub.o
+cp libtest2.so /lib
+# cd ..
+# cd app
+# make
+gcc -o main.o -c main.c -I ../include
+gcc -o main main.o -L ../slib -l test2
+# ./main
+a + b == [30]
+a - b == [10]
+a * b == [200]
+a / b == [2]
+# 
+```
+
 ---
 
 ## gdb 调试
@@ -423,12 +548,12 @@ b test.c:8 if intValue == 5
 
 查看修改变量的值
 
-* `p type width` -- 查看变量 `width` 的类型 `type = double`
+* `ptype width` -- 查看变量 `width` 的类型 `type = double`
 * `p width` -- 打印变量 `width` 的值 `$4 = 13`
 
 你可以使用 `set var` 命令来告诉 GDB，`width` 不是 GDB 的参数，而是程序的变量名，如：
 
-`set var width = 47`  // 将变量 `var` 值设置为 47
+`set var width = 47`  // 将变量 `width` 值设置为 47
 
 在你改变程序变量取值时，最好都使用 `set var` 格式的 GDB 命令
 

@@ -289,7 +289,7 @@ rm -f main  ./fun1.o  ./fun2.o  ./sum.o  ./main.o
 
 ## makefile 综合案例
 
-下面展示一个结合静态库，动态库，`makefile` 的综合案例
+下面展示一个结合静态库，动态库，`makefile` 的综合 [案例](../codes/part1/makefile_example/)
 
 代码 `tree` 如下:
 

@@ -322,8 +322,201 @@ int main()
 
 ## 重载、重写(覆盖)和隐藏的区别
 
+**重载(overload)**
 
+重载是指在同一范围定义中的同名成员函数才存在重载关系。主要特点是函数名相同，参数类型和数目有所不同，不能出现参数个数和类型均相同，仅仅依靠返回值不同来区分的函数。重载和函数成员是否是虚函数无关。举个例子：
 
+```cpp
+class A
+{
+    // ...
+    virtual int fun();
+    void fun(int);
+    void fun(double, double);
+    static int fun(char);
+    // ...
+};
+```
+
+**重写(覆盖)(override)**
+
+重写指的是在派生类中覆盖基类中的同名函数，重写就是重写函数体，要求基类函数必须是虚函数且：
+
+* 与基类的虚函数有相同的参数个数
+* 与基类的虚函数有相同的参数类型
+* 与基类的虚函数有相同的返回值类型
+
+举个例子：
+
+```cpp
+// 父类
+class A
+{
+public:
+    virtual int fun(int a) {}
+};
+
+// 子类
+class B : public A
+{
+public:
+    // 重写，一般加 override 可以确保是重写父类的函数
+    virtual int fun(int a) override {}
+};
+```
+
+重载与重写的区别：
+
+* 重写是父类和子类之间的垂直关系，重载是不同函数之间的水平关系
+* 重写要求参数列表相同，重载则要求参数列表不同，返回值不要求
+* 重写关系中，调用方法根据对象类型决定，重载根据调用时实参表与形参表的对应关系来选择函数体
+
+**隐藏(hide)**
+
+隐藏指的是某些情况下，派生类中的函数屏蔽了基类中的同名函数，包括以下情况：
+
+* 两个函数参数相同，但是基类函数不是虚函数。**和重写的区别在于基类函数是否是虚函数**。举个例子：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+// 父类
+class A
+{
+public:
+    void fun(int a)
+    {
+        cout << "A 中的 fun 函数" << endl;
+    }
+};
+
+// 子类
+class B : public A
+{
+public:
+    // 隐藏父类的 fun 函数
+    void fun(int a)
+    {
+        cout << "B 中的 fun 函数" << endl;
+    }
+};
+
+int main()
+{
+    B b;
+    b.fun(2);    // 调用的是 B 中的 fun 函数
+    b.A::fun(2); // 调用 A 中 fun 函数
+
+    /*
+        B 中的 fun 函数
+        A 中的 fun 函数
+    */
+
+    return 0;
+}
+```
+
+* 两个函数参数不同，无论基类函数是不是虚函数，都会被隐藏。和重载的区别在于两个函数不在同一个类中。举个例子：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+// 父类
+class A
+{
+public:
+    virtual void fun(int a)
+    {
+        cout << "A 中的 fun 函数" << endl;
+    }
+};
+
+// 子类
+class B : public A
+{
+public:
+    // 隐藏父类的 fun 函数
+    virtual void fun(char *a)
+    {
+        cout << "A 中的 fun 函数" << endl;
+    }
+};
+
+int main()
+{
+    B b;
+    // b.fun(2); // 报错，调用的是 B 中的 fun 函数，参数类型不对
+    b.A::fun(2); // 调用 A 中 fun 函数
+
+    // A 中的 fun 函数
+
+    return 0;
+}
+```
+
+补充：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+// 父类
+class A
+{
+public:
+    virtual void fun(int a)
+    {
+        // 虚函数
+        cout << "This is A fun " << a << endl;
+    }
+    void add(int a, int b)
+    {
+        cout << "This is A add " << a + b << endl;
+    }
+};
+
+// 子类
+class B : public A
+{
+public:
+    void fun(int a) override
+    {
+        // 覆盖
+        cout << "This is B fun " << a << endl;
+    }
+    void add(int a)
+    {
+        // 隐藏
+        cout << "This is B add " << a + a << endl;
+    }
+};
+
+int main()
+{
+    // 基类指针指向派生类对象时，基类指针可以直接调用到派生类的覆盖函数，也可以通过 :: 调用到基类被覆盖
+    // 的虚函数；而基类指针只能调用基类的被隐藏函数，无法识别派生类中的隐藏函数
+
+    A *p = new B();
+    p->fun(1);    // 调用子类 fun 覆盖函数
+    p->A::fun(1); // 调用父类 fun
+    p->add(1, 2);
+    // p->add(1);      // 错误，识别的是 A 类中的 add 函数，参数不匹配
+    // p->B::add(1);   // 错误，无法识别子类 add 函数
+
+    /*
+        This is B fun 1
+        This is A fun 1
+        This is A add 3
+    */
+
+    return 0;
+}
+```
 
 ---
 
@@ -627,5 +820,50 @@ char *strncpy(char *dest, const char *src, size_t n);
     * 如果目标长 > 指定长 > 源长，则将源长全部拷贝到目标长，自动加上 `\0`
     * 如果指定长 < 源长，则将源长中按指定长度拷贝到目标字符串，不包括 `\0`
     * 如果指定长 > 目标长，运行时错误 
+
+---
+
+## malloc、realloc、calloc 区别
+
+* `malloc` 函数
+
+```cpp
+void* malloc(unsigned int num_size);
+int *p = malloc(20*sizeof(int)); // 申请 20 个 int 类型的空间
+```
+
+* `calloc` 函数
+
+```cpp
+void* calloc(size_t n,size_t size);
+int *p = calloc(20, sizeof(int));
+```
+
+省去了人为空间计算；`malloc` 申请的空间的值是随机初始化的，`calloc` 申请的空间的值是初始化为 0 的
+
+* `realloc` 函数
+
+```cpp
+void realloc(void *p, size_t new_size);
+```
+    
+给动态分配的空间分配额外的空间，用于扩充容量
+
+---
+
+## 数组和指针的区别
+
+* 数组在内存中是连续存放的，开辟一块连续的内存空间；数组所占存储空间：`sizeof(数组名)`；数组大小：`sizeof(数组名)/sizeof(数组元素数据类型)`
+* 用运算符 `sizeof` 可以计算出数组的容量(字节数)。`sizeof(p)`，`p` 为指针得到的是一个指针变量的字节数，而不是 `p` 所指的内存容量
+* 编译器为了简化对数组的支持，实际上是利用指针实现了对数组的支持。具体来说，就是将表达式中的数组元素引用转换为指针加偏移量的引用
+* 在向函数传递参数的时候，如果实参是一个数组，那用于接受的形参为对应的指针。也就是传递过去是数组的首地址而不是整个数组，能够提高效率
+* 在使用下标的时候，两者的用法相同，都是原地址加上下标值，不过数组的原地址就是数组首元素的地址是固定的，指针的原地址就不是固定的
+
+---
+
+## delete 和 delete[] 区别
+
+* `delete` 只会调用一次析构函数
+* `delete[]` 会调用数组中每个元素的析构函数
 
 ---

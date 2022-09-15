@@ -4,5 +4,6 @@
 * [文件和目录操作](./notes/part2.md)
 * [进程控制](./notes/part3.md)
 * [进程间通信](./notes/part4.md)
+* [信号](./notes/part5.md)
 
 ---

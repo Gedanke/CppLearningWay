@@ -108,6 +108,297 @@ Linux 内核的进程控制块 PCB 是一个结构体，这个结构体里面包
 	* `signum`：信号编号
 	* `handler`：信号处理函数
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+// 信号处理函数
+void sighandler(int signo)
+{
+    printf("signo: %d\n", signo);
+}
+
+int main()
+{
+    // 创建管道
+    int fd[2];
+    int ret = pipe(fd);
+    if (ret < 0)
+    {
+        perror("pipe error");
+        return -1;
+    }
+
+    // 注册 SIGPIPE 信号处理函数
+    signal(SIGPIPE, sighandler);
+
+    // 关闭读端
+    close(fd[0]);
+    // 不关闭读端，没有 SIGPIPE 信号
+
+    write(fd[1], "hello world", strlen("hello world"));
+
+    /*
+        signo: 13
+    */
+
+    return 0;
+}
+```
+
+验证 `SIGCHLD` 信号是如何产生的: 子进程退出，`SIGSTOP`，`SIGCONT`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/time.h>
+
+void sighandler(int signo)
+{
+    printf("signo: %d\n", signo);
+}
+
+int main()
+{
+    pid_t pid;
+    int i = 0;
+
+    signal(SIGCHLD, sighandler);
+
+    pid = fork();
+
+    if (pid < 0)
+    {
+        perror("fork error");
+        return -1;
+    }
+    else if (pid > 0)
+    {
+        printf("The father process, pid: %d, child pid: %d\n", getpid(), pid);
+        int status;
+        while (1)
+        {
+            sleep(1);
+            pid_t p = waitpid(-1, &status, WNOHANG);
+            if (WIFEXITED(status))
+            {
+                // 正常退出
+                printf("Child normal exit, status: %d\n", WEXITSTATUS(status));
+                break;
+            }
+            else if (WIFSIGNALED(status))
+            {
+                // 被信号杀死
+                printf("Child killed by signal, signo: %d\n", WTERMSIG(status));
+                break;
+            }
+            else
+            {
+            }
+        }
+    }
+    else
+    {
+        printf("The child process, father pid: %d, pid: %d\n", getppid(), getpid());
+        exit(-1);
+    }
+
+    /*
+        The father process, pid: 17726, child pid: 17727
+        The child process, father pid: 17726, pid: 17727
+        signo: 17
+        Child normal exit, status: 255
+    */
+
+    return 0;
+}
+```
+
+`forkLoop.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/time.h>
+
+void waitchild(int signo)
+{
+    printf("signo: %d\n", signo);
+}
+
+int main()
+{
+    int i = 0;
+    int n = 3;
+
+    for (i = 0; i < n; i++)
+    {
+        // fork 子进程
+        pid_t pid = fork();
+        if (pid < 0)
+        {
+            perror("fork error");
+            return -1;
+        }
+        else if (pid > 0)
+        {
+            printf("father: pid: %d\n", getpid());
+            sleep(1);
+        }
+        else
+        {
+            printf("child: pid: %d\n", getpid());
+            break;
+        }
+    }
+
+    // 父进程
+    if (i == 3)
+    {
+        printf("%d: father: pid: %d\n", i, getpid());
+        signal(SIGCHLD, waitchild);
+
+        while (1)
+        {
+            sleep(4);
+            // 杀死一个进程组
+            kill(0, SIGKILL);
+        }
+    }
+    if (i == 0)
+    {
+        printf("%d: child: %d\n", i, getpid());
+        sleep(10);
+    }
+    if (i == 1)
+    {
+        printf("%d: child: %d\n", i, getpid());
+        sleep(10);
+    }
+    if (i == 2)
+    {
+        printf("%d: child: %d\n", i, getpid());
+        sleep(10);
+    }
+
+    /*
+        father: pid: 19627
+        child: pid: 19628
+        0: child: 19628
+        father: pid: 19627
+        child: pid: 19654
+        1: child: 19654
+        father: pid: 19627
+        child: pid: 19679
+        2: child: 19679
+        3: father: pid: 19627
+        Killed
+    */
+
+    return 0;
+}
+```
+
+`fork.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/time.h>
+
+void waitchild(int signo)
+{
+    printf("signo: %d\n", signo);
+}
+
+int main()
+{
+    int i = 0;
+    int n = 3;
+
+    for (i = 0; i < n; i++)
+    {
+        // fork 子进程
+        pid_t pid = fork();
+        if (pid < 0)
+        {
+            perror("fork error");
+            return -1;
+        }
+        else if (pid > 0)
+        {
+            printf("father: pid: %d\n", getpid());
+        }
+        else
+        {
+            printf("child: pid: %d\n", getpid());
+            break;
+        }
+    }
+
+    // 父进程
+    if (i == 3)
+    {
+        printf("the father: pid: %d\n", getpid());
+    }
+    if (i == 0)
+    {
+        printf("the first child: %d\n", getpid());
+    }
+    if (i == 1)
+    {
+        printf("the second child: %d\n", getpid());
+    }
+    if (i == 2)
+    {
+        printf("the third child: %d\n", getpid());
+    }
+
+    /*
+        father: pid: 19239
+        father: pid: 19239
+        father: pid: 19239
+        the father: pid: 19239
+        child: pid: 19242
+        the third child: 19242
+        child: pid: 19241
+        the second child: 19241
+        child: pid: 19240
+        the first child: 19240
+     */
+
+    return 0;
+}
+```
+
 ### kill 函数/命令
 
 * 描述：给指定进程发送指定信号
@@ -126,6 +417,105 @@ Linux 内核的进程控制块 PCB 是一个结构体，这个结构体里面包
 
 进程组：每个进程都属于一个进程组，进程组是一个或多个进程集合，他们相互关联，共同完成一个实体任务，每个进程组都有一个进程组长，默认进程组 ID 与进程组长 ID 相同
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+void testKill1()
+{
+    kill(getpid(), SIGKILL);
+    printf("hello world\n");
+}
+
+// 父进程杀死子进程或者子进程杀死父进程
+void testKill2()
+{
+    pid_t pid;
+    int i = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        pid = fork();
+        if (pid < 0)
+        {
+            perror("fork error");
+            return;
+        }
+        else if (pid > 0)
+        {
+            printf("father process, pid: %d, child pid: %d\n", getpid(), pid);
+            // if (i == 0)
+            // {
+            //     kill(pid, SIGKILL);
+            // }
+        }
+        else
+        {
+            printf("child process, father pid: %d, pid: %d\n", getppid(), getpid());
+            break;
+        }
+    }
+
+    if (i == 0)
+    {
+        printf("the first child, pid: %d\n", getpid());
+
+        // 子进程杀死父进程
+        // kill(getppid(), SIGKILL);
+
+        sleep(1);
+        // 杀死同一组内所有进程
+        kill(0, SIGKILL);
+    }
+    if (i == 1)
+    {
+        printf("the second child, pid: %d\n", getpid());
+        sleep(3);
+    }
+    if (i == 2)
+    {
+        printf("the third child, pid: %d\n", getpid());
+        sleep(3);
+    }
+    if (i == 3)
+    {
+        printf("the father, pid: %d\n", getpid());
+        sleep(3);
+    }
+}
+
+int main()
+{
+    // testKill1();
+
+    // Killed
+
+    testKill2();
+
+    /*
+        father process, pid: 13747, child pid: 13748
+        father process, pid: 13747, child pid: 13749
+        father process, pid: 13747, child pid: 13750
+        the first child, pid: 13747
+        child process, father pid: 13747, pid: 13750
+        the first child, pid: 13750
+        child process, father pid: 13747, pid: 13749
+        the first child, pid: 13749
+        child process, father pid: 13747, pid: 13748
+        the first child, pid: 13748
+        Killed
+    */
+
+    return 0;
+}
+```
+
 ### abort 函数与 raise 函数
 
 * `raise` 函数
@@ -135,10 +525,59 @@ Linux 内核的进程控制块 PCB 是一个结构体，这个结构体里面包
 		* 成功：0
 		* 失败：非 0 值
 	* 函数拓展：`raise(signo) == kill(getpid(), signo);`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+int main()
+{
+    // 给当前进程发送信号
+    raise(SIGKILL);
+
+    printf("hello world\n");
+
+    // Killed
+
+    return 0;
+}
+```
+
 * `abort` 函数
 	* 函数描述：给自己发送异常终止信号 `6) SIGABRT`，并产生 `core` 文件
 	* 函数原型：`void abort(void);`  
 	* 函数拓展：`abort() == kill(getpid(), SIGABRT);`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+int main()
+{
+    // 给当前进程发送信号
+    abort();
+
+    printf("hello world\n");
+
+    // Aborted (core dumped)
+
+    return 0;
+}
+```
 
 ### alarm 函数	
 
@@ -156,6 +595,110 @@ Linux 内核的进程控制块 PCB 是一个结构体，这个结构体里面包
 	* 实际执行时间 = 系统时间 + 用户时间 + 损耗时间
 		* 损耗的时间主要来来自文件 IO 操作，IO 操作会有用户区到内核区的切换，切换的次数越多越耗时
 
+`alarm.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+void sighandler(int signo)
+{
+    printf("signo: %d\n", signo);
+}
+
+int main()
+{
+    signal(SIGALRM, sighandler);
+
+    // 设置时钟
+    int n = alarm(5);
+    printf("n: %d\n", n);
+
+    sleep(2);
+    n = alarm(2);
+    printf("n: %d\n", n);
+
+    sleep(2);
+    n = alarm(5);
+    printf("n: %d\n", n);
+
+    // 取消闹钟
+    n = alarm(0);
+    printf("n: %d\n", n);
+
+    sleep(6);
+
+    /*
+        n: 0
+        n: 3
+        signo: 14
+        n: 0
+        n: 5
+    */
+
+    return 0;
+}
+```
+
+`alarmCount.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+int main()
+{
+    alarm(1);
+    int i = 0;
+    while (1)
+    {
+        printf("[%d]", i++);
+    }
+
+    return 0;
+}
+```
+
+`alarmUncle.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+int main()
+{
+    alarm(1);
+    int i = 0;
+    while (1)
+    {
+        printf("[%d]\n", i++);
+    }
+
+    return 0;
+}
+```
+
 ### setitimer 函数
 
 * 函数原型       
@@ -165,38 +708,212 @@ int setitimer(int which, const struct itimerval *new_value, struct itimerval *ol
 ```
 
 * 函数描述
-	
-设置定时器(闹钟)，可代替 `alarm` 函数，精度微秒 `us`，可以实现周期定时
-
+    * 设置定时器(闹钟)，可代替 `alarm` 函数，精度微秒 `us`，可以实现周期定时
 * 函数返回值
 	* 成功：0；
 	* 失败：-1，设置 `errno` 值
-
 * 函数参数： 
 	* `which`：指定定时方式
 		* 自然定时：`ITIMER_REAL -> 14) SIGALRM` 计算自然时间
 		* 虚拟空间计时(用户空间)：`ITIMER_VIRTUAL -> 26) SIGVTALRM` 只计算进程占用 cpu 的时间
 		* 运行时计时(用户 + 内核)：`ITIMER_PROF -> 27) SIGPROF` 计算占用 cpu 及执行系统调用的时间
-	* `new_value：struct itimerval`，负责设定 `timeout` 时间
+	* `new_value`：`struct itimerval`，负责设定 `timeout` 时间
 		* `itimerval.it_value`: 设定第一次执行 `function` 所延迟的秒数
 		* `itimerval.it_interval`: 设定以后每几秒执行 `function`
     * `old_value`：存放旧的 `timeout` 值，一般指定为 `NULL`
 
 ```c
-struct itimerval
-{
-    struct timerval it_interval; // 闹钟触发周期
-    struct timerval it_value;    // 闹钟触发时间
-};
-
 struct timeval
 {
     long tv_sec;  // 秒
     long tv_usec; // 微秒
 };
+
+struct itimerval
+{
+    struct timeval it_interval; // 闹钟触发周期
+    struct timeval it_value;    // 闹钟触发时间
+};
 ```
 
 练习: 使用 `setitimer` 实现每隔一秒打印一次 `hello，world`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/time.h>
+
+void sighandler(int signo)
+{
+    // printf("signo: %d\n", signo);
+    printf("hello world\n");
+}
+
+int main()
+{
+    // int setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value);
+
+    // 注册信号 SIGAKRN 的信号处理函数
+    signal(SIGALRM, sighandler);
+
+    struct itimerval timerval;
+    // 周期行时间赋值
+    timerval.it_interval.tv_sec = 1;
+    timerval.it_interval.tv_usec = 0;
+
+    // 第一次触发时间
+    timerval.it_value.tv_sec = 1;
+    timerval.it_value.tv_usec = 0;
+
+    setitimer(ITIMER_REAL, &timerval, NULL);
+
+    while (1)
+    {
+        sleep(1);
+    }
+
+    /*
+        hello world
+        hello world
+        hello world
+        hello world
+        // ...
+    */
+
+    return 0;
+}
+```
+
+`pipeBrother.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+int main()
+{
+    int fd[2];
+    int ret;
+    pid_t pid;
+
+    // 创建一个管道
+    ret = pipe(fd);
+    if (ret < 0)
+    {
+        perror("pipe error");
+        return -1;
+    }
+
+    int i = 0;
+    int n = 2;
+    for (i = 0; i < n; i++)
+    {
+        // 创建子进程
+        pid = fork();
+        if (pid < 0)
+        {
+            perror("fork error");
+            return -1;
+        }
+        else if (pid == 0)
+        {
+            break;
+        }
+        else
+        {
+        }
+    }
+
+    if (i == n)
+    {
+        close(fd[0]);
+        close(fd[1]);
+
+        pid_t wpid;
+        int status;
+
+        while (1)
+        {
+            // 等待子进程回收
+            wpid = waitpid(-1, &status, WNOHANG);
+            if (wpid == 0)
+            {
+                sleep(1);
+                continue;
+            }
+            else if (wpid == -1)
+            {
+                printf("no child is living, wpid: %d\n", wpid);
+                exit(0);
+            }
+            else if (wpid > 0)
+            {
+                if (WIFEXITED(status))
+                {
+                    printf("child normal exited, status: %d\n", WEXITSTATUS(status));
+                }
+                else if (WIFSIGNALED(status))
+                {
+                    printf("child killed by signo: %d\n", WTERMSIG(status));
+                }
+                else
+                {
+                }
+            }
+            else
+            {
+            }
+        }
+    }
+    if (i == 0)
+    {
+        close(fd[0]);
+
+        // 将标准输出重定向到管道写端
+        dup2(fd[1], STDOUT_FILENO);
+        execlp("ps", "ps", "-aux", NULL);
+
+        close(fd[1]);
+    }
+    if (i == 1)
+    {
+        close(fd[1]);
+        printf("child: fpid: %d, cpid: %d\n", getppid(), getpid());
+
+        // 将标准输入重定向到管道读端
+        dup2(fd[0], STDIN_FILENO);
+        execlp("grep", "grep", "--color", "bash", NULL);
+
+        close(fd[0]);
+    }
+
+    /*
+        child: fpid: 23829, cpid: 23831
+        root       15536  0.0  0.1   9624  3756 ?        Ss   11:53   0:00 bash
+        root       15795  0.0  0.2  10048  4368 pts/0    Ss   11:54   0:00 /usr/bin/bash --init-file /root/.vscode-server/bin/74b1f979648cc44d385a2286793c226e611f59e7/out/vs/workbench/contrib/terminal/browser/media/shellIntegration-bash.sh
+        root       23831  0.0  0.0   9032   648 pts/0    S+   19:13   0:00 grep --color bash
+        child normal exited, status: 0
+        child normal exited, status: 0
+        no child is living, wpid: -1
+    */
+
+    return 0;
+}
+```
 
 ---
 
@@ -204,11 +921,11 @@ struct timeval
 
 ### 未决信号集和阻塞信号集的关系
 
-阻塞信号集是当前进程要阻塞的信号的集合，未决信号集是当前进程中还处于未决状态的信号的集合，这两个集合存储在内核的 PCB 中
-
-![](../photos/part5/%E4%BF%A1%E5%8F%B7%E9%9B%86.png)
+阻塞信号集是当前进程要阻塞的信号的集合，未决信号集是当前进程中还处于未决状态的信号的集合，这两个集合存储在内核的 PCB 中，信号不支持排队
 
 ![](../photos/part5/%E9%98%BB%E5%A1%9E%E4%BF%A1%E5%8F%B7%E5%92%8C%E6%9C%AA%E5%86%B3%E4%BF%A1%E5%8F%B7%E9%9B%86%E7%9A%84%E5%85%B3%E7%B3%BB.png)
+
+![](../photos/part5/%E4%BF%A1%E5%8F%B7%E9%9B%86.png)
 
 下面以 `SIGINT` 为例说明信号未决信号集和阻塞信号集的关系：
 
@@ -296,6 +1013,103 @@ typedef struct
 
 练习：编写程序，设置阻塞信号集并把所有常规信号的未决状态打印至屏幕
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <signal.h>
+
+// 信号处理函数
+void sighandler(int signo)
+{
+    printf("signo: %d\n", signo);
+}
+
+int main()
+{
+    // 注册信号处理函数
+    signal(SIGINT, sighandler);
+    signal(SIGQUIT, sighandler);
+
+    // 定义信号集变量
+    sigset_t set;
+    sigset_t oldset;
+
+    // 初始化信号集
+    sigemptyset(&set);
+    sigemptyset(&oldset);
+
+    // 将 SIGINT SIGQUIT 加入到 set 集合
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGQUIT);
+
+    // 将 set 集合中的 SIGINT，SIGQUIT 信号加入到阻塞信号集中
+    sigprocmask(SIG_BLOCK, &set, &oldset);
+
+    int i = 0;
+    int j = 1;
+    sigset_t pend;
+
+    while (1)
+    {
+        // 获取未决信号
+        sigemptyset(&pend);
+        sigpending(&pend);
+
+        for (i = 1; i <= 32; i++)
+        {
+            if (sigismember(&pend, i) == 1)
+            {
+                printf("1");
+            }
+            else
+            {
+                printf("0");
+            }
+        }
+        printf("\n");
+
+        // 循环 10 次接触对 SIGINT，SIGQUIT 信号的阻塞
+        if (j++ % 10 == 0)
+        {
+            sigprocmask(SIG_SETMASK, &oldset, NULL);
+        }
+        else
+        {
+            sigprocmask(SIG_BLOCK, &set, NULL);
+        }
+
+        sleep(1);
+    }
+
+    /*
+        00000000000000000000000000000000
+        00000000000000000000000000000000
+        ^C01000000000000000000000000000000
+        01000000000000000000000000000000
+        01000000000000000000000000000000
+        ^\01100000000000000000000000000000
+        01100000000000000000000000000000
+        01100000000000000000000000000000
+        01100000000000000000000000000000
+        01100000000000000000000000000000
+        signo: 3
+        signo: 2
+        00000000000000000000000000000000
+        00000000000000000000000000000000
+        ...
+    */
+
+    return 0;
+}
+```
+
 ---
 
 ## 信号捕捉函数
@@ -342,6 +1156,58 @@ struct sigaction
 	* `sighandler` 函数返回后自动执行特殊的系统调用 `sigreturn` 再次进入内核态
 	* 如果没有新的信号要递达，这次再返回用户态就是恢复 `main` 函数的上下文继续执行了
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <signal.h>
+
+// 信号处理函数
+void sighandler(int signo)
+{
+    printf("signo: %d\n", signo);
+    sleep(5);
+}
+
+int main()
+{
+    // 注册 SIGINT 信号处理函数
+    struct sigaction act;
+    // 信号处理函数
+    act.sa_handler = sighandler;
+    // 阻塞信号
+    sigemptyset(&act.sa_mask);
+    // 在信号处理函数执行期间阻塞 SIGQUIT 信号
+    // sigaddset(&act.sa_mask, SIGQUIT);
+    act.sa_flags = 0;
+    sigaction(SIGINT, &act, NULL);
+
+    signal(SIGQUIT, sighandler);
+
+    while (1)
+    {
+        sleep(1);
+    }
+
+    /*
+        ^Csigno: 2
+        ^\signo: 3
+        ^\^\signo: 3
+        ^C^\^C^\^C^\^Csigno: 3
+        ^\signo: 3
+        ^Csigno: 2
+    */
+
+    return 0;
+}
+```
+
 ![](../photos/part5/4.png)
 
 ---
@@ -368,5 +1234,220 @@ struct sigaction
 	* 解决办法：可以在 `fork` 之前先将 `SIGCHLD` 信号阻塞，当完成信号处理函数的注册后在解除阻塞
 	* 当 `SIGCHLD` 信号函数处理期间，`SIGCHLD` 信号若再次产生是被阻塞的，而且若产生了多次，则该信号只会被处理一次，这样可能会产生僵尸进程
 		* 解决办法: 可以在信号处理函数里面使用 `while(1)` 循环回收，这样就有可能出现捕获一次 `SIGCHLD` 信号但是回收了多个子进程的情况，从而可以避免产生僵尸进程
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <signal.h>
+
+// SIGCHLD 信号处理函数
+void waitchild(int signo)
+{
+    pid_t wpid;
+    while (1)
+    {
+        wpid = waitpid(-1, NULL, WNOHANG);
+        if (wpid > 0)
+        {
+            printf("child is quit, wpid: %d\n", wpid);
+        }
+        else if (wpid == 0)
+        {
+            printf("child is living, wpid: %d\n", wpid);
+            break;
+        }
+        else if (wpid == -1)
+        {
+            printf("no child is living, wpid: %d\n", wpid);
+            break;
+        }
+        else
+        {
+        }
+    }
+}
+
+int main()
+{
+    pid_t pid;
+    int i = 0;
+
+    // 将 SIGCHLD 信号阻塞
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+
+    for (i = 0; i < 3; i++)
+    {
+        pid = fork();
+        if (pid < 0)
+        {
+            perror("fork error");
+            return -1;
+        }
+        else if (pid > 0)
+        {
+            printf("father process, pid: %d, child pid: %d\n", getpid(), pid);
+        }
+        else
+        {
+            printf("child process, father pid: %d, pid: %d\n", getppid(), getpid());
+            break;
+        }
+    }
+
+    if (i == 0)
+    {
+        printf("the first child, pid: %d\n", getpid());
+    }
+    if (i == 1)
+    {
+        printf("the second child, pid: %d\n", getpid());
+    }
+    if (i == 2)
+    {
+        printf("the third child, pid: %d\n", getpid());
+    }
+    if (i == 3)
+    {
+        printf("the father, pid: %d\n", getpid());
+
+        // 注册 SIGCHLD 信号处理函数
+        struct sigaction act;
+        act.sa_handler = waitchild;
+        sigemptyset(&act.sa_mask);
+        act.sa_flags = 0;
+        sleep(5);
+        sigaction(SIGCHLD, &act, NULL);
+
+        // 完成 SIGCHLD 信号的注册后，解除对 SIGCHLD 信号的阻塞
+        sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+        while (1)
+        {
+            sleep(1);
+        }
+    }
+
+    /*
+        father process, pid: 42357, child pid: 42358
+        father process, pid: 42357, child pid: 42359
+        father process, pid: 42357, child pid: 42360
+        the father, pid: 42357
+        child process, father pid: 42357, pid: 42360
+        the third child, pid: 42360
+        child process, father pid: 42357, pid: 42359
+        the second child, pid: 42359
+        child process, father pid: 42357, pid: 42358
+        the first child, pid: 42358
+        child is quit, wpid: 42358
+        child is quit, wpid: 42359
+        child is quit, wpid: 42360
+        no child is living, wpid: -1
+    */
+
+    return 0;
+}
+```
+
+练习：
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <signal.h>
+
+int num = 0;
+int flag;
+
+void func1(int signo)
+{
+    printf("F:[%d]\n", num);
+    num += 2;
+    flag = 0;
+    sleep(1);
+}
+
+void func2(int signo)
+{
+    printf("C:[%d]\n", num);
+    num += 2;
+    flag = 0;
+    sleep(1);
+}
+
+int main()
+{
+    int ret;
+    pid_t pid;
+
+    pid = fork();
+
+    if (pid < 0)
+    {
+        perror("fork error");
+        return -1;
+    }
+    else if (pid > 0)
+    {
+        num = 0;
+        flag = 1;
+        signal(SIGUSR1, func1);
+
+        while (1)
+        {
+            if (flag == 0)
+            {
+                kill(pid, SIGUSR2);
+                flag = 1;
+            }
+        }
+    }
+    else
+    {
+        num = 1;
+        flag = 0;
+        signal(SIGUSR2, func2);
+
+        while (1)
+        {
+            if (flag == 0)
+            {
+                kill(getppid(), SIGUSR1);
+                flag = 1;
+            }
+        }
+    }
+
+    /*
+        F:[0]
+        C:[1]
+        F:[2]
+        C:[3]
+        F:[4]
+        C:[5]
+        F:[6]
+        C:[7]
+        // ...
+    */
+
+    return 0;
+}
+```
 
 ---

@@ -31,7 +31,7 @@ Linux 后台的一些系统服务进程，没有控制终端，不能直接和�
 * 进程组
     * 进程组是一个或者多个进程的集合，每个进程都属于一个进程组，引入进程组是为了简化对进程的管理。当父进程创建子进程的时候，默认子进程与父进程属于同一个进程组
     * 进程组 ID == 第一个进程 ID(组长进程)。如父进程创建了多个子进程，父进程和多个子进程同属于一个组，而由于父进程是进程组里的第一个进程，所以父进程就是这个组的组长，组长 ID == 父进程 ID
-    * 可以使用 `kill -SIGKILL -进程组ID(负的)` 来将整个进程组内的进程全部杀死
+    * 可以使用 `kill -SIGKILL -进程组 ID(负的)` 来将整个进程组内的进程全部杀死
     * 只要进程组中有一个进程存在，进程组就存在，与组长进程是否终止无关
     * 进程组生存期：从进程组创建到最后一个进程离开
 * 会话
@@ -85,6 +85,98 @@ Linux 后台的一些系统服务进程，没有控制终端，不能直接和�
 * `sigaction` 函数
 * 文件I/O操作
 * 获取系统时间函数 `time`，将 `time_t` 类型转换为字符串 `ctime` 函数
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/time.h>
+
+void myfunc(int signo)
+{
+    int fd = open("mydemon.log", O_RDWR | O_CREAT | O_APPEND, 0755);
+    if (fd < 0)
+    {
+        return;
+    }
+
+    // 获取当前系统时间
+    time_t t;
+    time(&t);
+    char *p = ctime(&t);
+
+    // 将时间写入到文件
+    write(fd, p, strlen(p));
+
+    close(fd);
+
+    return;
+}
+
+int main()
+{
+    // 父进程 fork 子进程，然后父进程退出
+    pid_t pid = fork();
+    if (pid < 0 || pid > 0)
+    {
+        exit(1);
+    }
+
+    // 子进程调用 setsid 函数创建会话
+    chdir("/home/root/log");
+
+    // 改变文件掩码
+    umask(0000);
+
+    // 关闭标准输入，输出和错误输出文件描述符
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    // 核心操作
+    // 注册信号处理函数
+    struct sigaction act;
+    act.sa_handler = myfunc;
+    act.sa_flags = 0;
+    sigemptyset(&act.sa_mask);
+    sigaction(SIGALRM, &act, NULL);
+
+    // 设置时钟
+    struct itimerval tm;
+    tm.it_interval.tv_sec = 2;
+    tm.it_interval.tv_usec = 0;
+    tm.it_value.tv_sec = 3;
+    tm.it_value.tv_usec = 0;
+    setitimer(ITIMER_REAL, &tm, NULL);
+
+    printf("hello world\n");
+
+    while (1)
+    {
+        sleep(1);
+    }
+
+    /*
+        # cat mydemon.log
+        Tue Sep 20 16:37:38 2022
+        Tue Sep 20 16:37:40 2022
+        Tue Sep 20 16:37:42 2022
+        Tue Sep 20 16:37:44 2022
+        Tue Sep 20 16:37:46 2022
+        Tue Sep 20 16:37:48 2022
+        Tue Sep 20 16:37:50 2022
+        ...
+    */
+
+    return 0;
+}
+```
 
 ---
 
@@ -171,12 +263,164 @@ Linux 内核是不区分进程和线程的，只在用户层面上进行区分
     * 由于 `pthread_create` 的错误码不保存在 `errno` 中，因此不能直接用 `perror()` 打印错误信息，可以先用 `strerror()` 把错误码转换成错误信息再打印
     * 如果任意一个线程调用了 `exit` 或 `_exit`，则整个进程的所有线程都终止，由于从 `main` 函数 `return` 也相当于调用 `exit`，为了防止新创建的线程还没有得到执行就终止，我们在 `main` 函数 `return` 之前延时 1 秒，这只是一种权宜之计，即使主线程等待 1 秒，内核也不一定会调度新创建的线程执行，下一节会看到更好的办法
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+}
+
+int main()
+{
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    /*
+        main thread, pid: 4773, id: 140421961856832
+        child thread, pid: 4773, id: 140421961852672
+    */
+
+    return 0;
+}
+```
+
 **练习题**
 
 * 编写程序创建一个线程
 * 编写程序创建一个线程，并给线程传递一个 `int` 参数
 * 编写程序创建一个线程，并给线程传递一个结构体参数
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+typedef struct _Test
+{
+    int data;
+    char name[64];
+} Test;
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    // int n = *(int *)arg;
+    // printf("n: %d\n", n);
+    Test *p = (Test *)arg;
+    printf("%d\t%s\n", p->data, p->name);
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+}
+
+int main()
+{
+    int n = 99;
+    Test t;
+    memset(&t, 0, sizeof(Test));
+    t.data = 88;
+    strcpy(t.name, "pthread");
+
+    // 创建子线程
+    pthread_t thread;
+    // int ret = pthread_create(&thread, NULL, mythread, &n);
+    int ret = pthread_create(&thread, NULL, mythread, &t);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    /*
+        main thread, pid: 4912, id: 140369853019968
+        n: 99
+        child thread, pid: 4912, id: 140369853015808
+    */
+
+    /*
+        main thread, pid: 4878, id: 140414698202944
+        88      pthread
+        child thread, pid: 4878, id: 140414698198784
+    */
+
+    return 0;
+}
+```
+
 * 编写程序，主线程循环创建 5 个子线程，并让子线程判断自己是第几个子线程
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    int i = *(int *)arg;
+    printf("%d child thread, pid: %d, id: %ld\n", i, getpid(), pthread_self());
+    sleep(4);
+}
+
+int main()
+{
+    int ret;
+    int i = 0;
+    int n = 5;
+    int arr[5];
+    pthread_t thread[5];
+    for (i = 0; i < n; i++)
+    {
+        arr[i] = i;
+        ret = pthread_create(&thread[i], NULL, mythread, &arr[i]);
+        if (ret != 0)
+        {
+            printf("pthread_create error, %s\n", strerror(ret));
+            return -1;
+        }
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 目的是为了让子线程执行起来
+    sleep(10);
+
+    /*
+        main thread, pid: 8844, id: 139636137559872
+        4 child thread, pid: 8844, id: 139636103984896
+        3 child thread, pid: 8844, id: 139636112377600
+        2 child thread, pid: 8844, id: 139636120770304
+        1 child thread, pid: 8844, id: 139636129163008
+        0 child thread, pid: 8844, id: 139636137555712
+    */
+
+    return 0;
+}
+```
 
 ![](../photos/part6/%E5%BE%AA%E7%8E%AF%E5%88%9B%E5%BB%BA%E5%A4%9A%E4%B8%AA%E5%AD%90%E7%BA%BF%E7%A8%8B.png)
 
@@ -228,6 +472,76 @@ Linux 内核是不区分进程和线程的，只在用户层面上进行区分
 
 通过程序测试得知，`pthread_exit` 函数只是使一个线程退出，假如子线程里面调用了 `exit` 函数，会使整个进程终止；如果主线程调用了 `pthread_exit` 函数，并不影响子线程，只是使主线程自己退出
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+typedef struct _Test
+{
+    int data;
+    char name[64];
+} Test;
+
+int gVar = 9;
+Test t;
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+    printf("%p\n", &gVar);
+    pthread_exit(&gVar);
+    memset(&t, 0, sizeof(t));
+    t.data = 99;
+    strcpy(t.name, "pthread");
+    pthread_exit(&t);
+}
+
+int main()
+{
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // pthread_exit(NULL);
+
+    // 回收子线程
+    void *p = NULL;
+    pthread_join(thread, &p);
+    // int n = *(int *)p;
+    Test *pt = (Test *)p;
+    printf("child exit status: %d, %s, %p\n", pt->data, pt->name, p);
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    /*
+        main thread, pid: 17934, id: 139877776721728
+        child thread, pid: 17934, id: 139877776717568
+        child exit status: 99, pthread, 0x55bd9d761040
+    */
+
+    /*
+        main thread, pid: 18509, id: 140055385065280
+        child thread, pid: 18509, id: 140055385061120
+        0x55e0c1fab010
+        child exit status: 9, , 0x55e0c1fab010
+    */
+
+    return 0;
+}
+```
+
 ### pthread_join 函数
 
 * 函数描述：阻塞等待线程退出，获取线程退出状态。其作用，对应进程中的 `waitpid()` 函数
@@ -242,6 +556,61 @@ Linux 内核是不区分进程和线程的，只在用户层面上进行区分
 练习：编写程序，使主线程获取子线程的退出状态
 
 一般先定义 `void *ptr;`，然后 `pthread_join(threadid, &ptr);`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+    sleep(6);
+    printf("child thread\n");
+}
+
+int main()
+{
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 阻塞等待子线程
+    void *ptr = NULL;
+    int res = pthread_join(thread, &ptr);
+    if (res != 0)
+    {
+        printf("pthread_join error\n");
+    }
+
+    printf("%p\n", ptr);
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    printf("main thread\n");
+
+    /*
+        main thread, pid: 13593, id: 140240246724416
+        child thread, pid: 13593, id: 140240246720256
+        child thread
+        0xd
+        main thread
+    */
+
+    return 0;
+}
+```
 
 ### pthread_detach 函数
 
@@ -264,6 +633,60 @@ Linux 内核是不区分进程和线程的，只在用户层面上进行区分
 练习：编写程序，在创建线程之后设置线程的分离状态
 
 说明：如果线程已经设置了分离状态，则再调用 `pthread_join` 就会失败，可用这个方法验证是否已成功设置分离状态
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+    sleep(6);
+    printf("child thread\n");
+}
+
+int main()
+{
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 设置线程为分离属性
+    pthread_detach(thread);
+
+    // 子线程设置分离属性，则 pthread_join 不再阻塞，立刻返回
+    ret = pthread_join(thread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_join error: %s\n", strerror(ret));
+    }
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    printf("main thread\n");
+
+    /*
+        main thread, pid: 14938, id: 140502206936896
+        pthread_join error: Invalid argument
+        child thread, pid: 14938, id: 140502206932736
+        main thread
+    */
+
+    return 0;
+}
+```
 
 ### pthread_cancel 函数
 
@@ -293,6 +716,65 @@ void pthread_testcancel(void);
 
 先测试一下没有取消点看看能否使线程取消；然后调用 `pthread_testcancel` 设置一个取消点，看看能够使线程取消
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+    while (1)
+    {
+        int a;
+        int b;
+
+        printf("cancel\n");
+
+        // 设置取消点
+        // pthread_testcancel();
+
+        printf("------\n");
+    }
+    printf("child thread\n");
+}
+
+int main()
+{
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 取消子线程
+    pthread_cancel(thread);
+
+    pthread_join(thread, NULL);
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    printf("main thread\n");
+
+    /*
+        main thread, pid: 16050, id: 140621898647360
+        child thread, pid: 16050, id: 140621898643200
+        main thread
+    */
+
+    return 0;
+}
+```
+
 ### pthread_equal 函数
 
 * 函数描述：
@@ -301,6 +783,55 @@ void pthread_testcancel(void);
     * `int pthread_equal(pthread_t t1, pthread_t t2);`
 
 注意：这个函数是为了以能够扩展使用的，有可能 Linux 在未来线程 ID `pthread_t` 类型被修改为结构体实现
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+}
+
+int main()
+{
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 标记线程 ID
+    if (pthread_equal(thread, pthread_self()) != 0)
+    {
+        printf("same\n");
+    }
+    else
+    {
+        printf("different\n");
+    }
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    /*
+        main thread, pid: 19922, id: 139778666370880
+        different
+        child thread, pid: 19922, id: 139778666366720
+    */
+
+    return 0;
+}
+```
 
 ### 进程函数和线程函数比较
 
@@ -334,7 +865,7 @@ Linux 下线程的属性是可以根据实际项目需要，进行设置，之�
                 * `detachstate`:
                     * `PTHREAD_CREATE_DETACHED`(分离)
                     * `PTHREAD_CREATE_JOINABLE`(非分离)
-    * 注意：这一步完成之后调用 `pthread_create` 函数创建线程，则创建出来的线程就是分离线程；其实上述三步就是 `pthread_create` 的第二个参数做准备工作
+        * 注意：这一步完成之后调用 `pthread_create` 函数创建线程，则创建出来的线程就是分离线程；其实上述三步就是 `pthread_create` 的第二个参数做准备工作
     * 第 4 步：释放线程属性资源
         * `int pthread_attr_destroy(pthread_attr_t *attr);`
             * 参数：线程属性
@@ -342,6 +873,69 @@ Linux 下线程的属性是可以根据实际项目需要，进行设置，之�
 练习：编写程序，创建一个分离属性的线程
 
 验证：设置为分离属性的线程是不能够被 `pthread_join` 函数回收的，可以通过调用 `pthread_join` 函数测试该线程是否已经是分离属性的线程
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// 线程执行函数
+void *mythread(void *arg)
+{
+    printf("child thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+    sleep(2);
+    printf("child thread\n");
+}
+
+int main()
+{
+    // 定义 pthread_attr_t 类型变量
+    pthread_attr_t attr;
+
+    // 初始化 attr 变量
+    pthread_attr_init(&attr);
+
+    // 设置 attr 为分离属性
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+    // 创建子线程
+    pthread_t thread;
+    int ret = pthread_create(&thread, NULL, mythread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_create error, %s\n", strerror(ret));
+        return -1;
+    }
+    printf("main thread, pid: %d, id: %ld\n", getpid(), pthread_self());
+
+    // 释放线程属性
+    pthread_attr_destroy(&attr);
+
+    // 验证子线程是否为分离属性
+    ret = pthread_join(thread, NULL);
+    if (ret != 0)
+    {
+        printf("pthread_join error, %s\n", strerror(ret));
+    }
+
+    // 目的是为了让子线程执行起来
+    sleep(1);
+
+    printf("main thread\n");
+
+    /*
+        main thread, pid: 22295, id: 139638672656192
+        child thread, pid: 22295, id: 139638672652032
+        child thread
+        main thread
+    */
+
+    return 0;
+}
+```
 
 ---
 
@@ -360,13 +954,31 @@ Linux 下线程的属性是可以根据实际项目需要，进行设置，之�
 线程 A 代码片段：
 
 ```c
+int i = 0;
+for (i = 0; i < 5000; i++)
+{
+    cur = number;
+    cur++;
+    number = cur;
+    printf("[B]: [%d]", number);
 
+    usleep(300);
+}
 ```
 
 线程 B 代码片段：
 
 ```c
+int i = 0;
+for (i = 0; i < 5000; i++)
+{
+    cur = number;
+    cur++;
+    number = cur;
+    printf("[A]: [%d]", number);
 
+    usleep(300);
+}
 ```
 
 * 代码片段说明
@@ -456,7 +1068,58 @@ Linux 中提供一把互斥锁 `mutex`(也称之为互斥量)。每个线程在�
 
 练习：使用互斥锁解决两个线程数数不一致的问题
 
-代码片段：在访问共享资源前加锁，访问结束后立即解锁。锁的"粒度"应越小越好
+在访问共享资源前加锁，访问结束后立即解锁。锁的"粒度"应越小越好
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
+
+int num = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void *thread_proc(void *arg)
+{
+    for (int i = 0; i < 1000000; ++i)
+    {
+        pthread_mutex_lock(&mutex);
+        num++;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+int main(void)
+{
+    int tcount = 3;
+    pthread_t tids[tcount];
+    for (long long i = 1; i <= tcount; ++i)
+    {
+        int errno = pthread_create(&tids[i - 1], NULL, thread_proc, (void *)i);
+        if (errno)
+        {
+            fprintf(stderr, "pthread_create:%s\n", strerror(errno));
+            return -1;
+        }
+    }
+    for (int i = 0; i < tcount; ++i)
+    {
+        pthread_t tid = tids[i];
+        pthread_join(tid, NULL);
+        printf("thread %lld 结束\n", (long long)tid);
+    }
+    printf("所有线程执行完毕，num: %d\n", num);
+
+    /*
+        thread 140326834177792 结束
+        thread 140326825785088 结束
+        thread 140326817392384 结束
+        所有线程执行完毕，num: 3000000
+    */
+
+    return 0;
+}
+```
  
 总结：使用互斥锁之后，两个线程由并行变为了串行，效率降低了，但是可以使两个线程同步操作共享资源，从而解决了数据不一致的问题
 

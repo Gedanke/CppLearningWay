@@ -162,9 +162,9 @@
 | 快捷键 | 操作 |
 | `:s/old/new/` | 光标所在行的第一个 `old` 替换为 `new` |
 | `:s/old/new/g` | 光标所在行的所有 `old` 替换为 `new` |
-| `:m，ns/old/new/g` | 将第 `m` 行至第 `n` 行之间的 `old` 全部替换成 `new` |
+| `:m, ns/old/new/g` | 将第 `m` 行至第 `n` 行之间的 `old` 全部替换成 `new` |
 | `:%s/old/new/g` | 当前文件的所有 `old` 替换为 `new` |
-| `:1，$s/old/new/g` | 当前文件的所有 `old` 替换为 `new` |
+| `:1, $s/old/new/g` | 当前文件的所有 `old` 替换为 `new` |
 | `:%s/old/new/gc` | 同上，但是每次替换需要用户确认 |
 
 * 快速翻屏
@@ -215,7 +215,7 @@
 例如: 在用户的家目录下的 `.vimrc` 文件中添加
 
 ```sh
-set tabstop=4  ----设置缩进 4 个空格
+set tabstop=4  --- 设置缩进 4 个空格
 set nu        ---- 设置行号
 set shiftwidth=4  --- 设置 gg=G 缩进 4 个空格，默认是缩进 8 个空格
 ```
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
    * `gcc -c fun1.c fun2.c`
    * 或者分别生成 `.o` 文件
       * `gcc -c fun1.c -o fun1.o`
- 		* `gcc -c fun2.c -o fun2.o`
+      * `gcc -c fun2.c -o fun2.o`
 * 步骤 2：使用打包工具 `ar` 将准备好的 `.o` 文件打包为 `.a` 文件
    * 在使用 `ar` 工具是时候需要添加参数 `rcs`
       * `r` 更新、`c` 创建、`s` 建立索引
